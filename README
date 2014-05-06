@@ -1,0 +1,5 @@
+Spares matrix help is a package of scripts, programs, and libraries to analyze and process sparse matrices.
+
+The intention is to have the ability to play around with sparse matrices. For example having different ordering schemes like GRMLCM a mixture of column and row major traversal.
+
+This is and will likely always be experimental so expect things to break.
