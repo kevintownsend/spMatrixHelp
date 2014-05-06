@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
         return 0;
     }
     if(string(argv[1]) == "-h"){
-        cout << "pff... you think this thing is documented?" << endl;
+        cout << "Yeah... e-mail kt@krtownsend.com" << endl;
         return 0;
     }
     int argIndex = 1;
