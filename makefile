@@ -1,4 +1,4 @@
-all : spm smac
+all : spm smac spMatrixHelp.o
 
 mcv.o : mcv.cpp
 	g++ -O3 -c mcv.cpp
@@ -11,3 +11,9 @@ smac : mmio.o mcv.o smac.cpp
 
 spm : mmio.o spm.cpp
 	g++ -O3 -o spm spm.cpp mmio.o
+
+spMatrixHelp.o : spMatrixHelp.hpp spMatrixHelp.cpp
+	g++ -O3 -c spMatrixHelp.cpp
+
+clear :
+	rm -rf *.o *.a
