@@ -1,3 +1,4 @@
+prefix=$(HOME)
 all : spm smac spMatrixHelp.o
 
 mcv.o : mcv.cpp
@@ -13,7 +14,11 @@ spm : mmio.o spm.cpp
 	g++ -O3 -o spm spm.cpp mmio.o
 
 spMatrixHelp.o : spMatrixHelp.hpp spMatrixHelp.cpp
-	g++ -O3 -c spMatrixHelp.cpp
+	g++ -std=gnu++0x -O3 -c spMatrixHelp.cpp
+
+release :
+	cp spMatrixHelp.o $(prefix)/lib/.
+	cp spMatrixHelp.hpp $(prefix)/include/.
 
 clear :
 	rm -rf *.o *.a

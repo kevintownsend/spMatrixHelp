@@ -170,6 +170,7 @@ int main(int argc, char* argv[]){
     else{
         cerr << "Warning: empty Rows or Columns" << endl;
         removeEmptyRowCol(I, J, &M, &N, nnz);
+        //TODO: change to adding zeros
     }
     
     if(orderCheck((uint64_t*)I,(uint64_t*)J,nnz))
@@ -178,7 +179,6 @@ int main(int argc, char* argv[]){
         cerr << "No empty Rows or Columns" << endl;
     if(nonZeroCheck(val,nnz))
         cerr << "No explicit non-zeros" << endl;
-    //TODO: GRMLCM traversal
     if(GRMLCM > 0){
         toGrmlcm(I, J, val, M, N, nnz, GRMLCM);
     }
