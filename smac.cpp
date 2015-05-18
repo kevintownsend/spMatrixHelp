@@ -1,20 +1,6 @@
-/**
- * Copyright 2014 Kevin Townsend
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 #include <ios>
 #include <iostream>
+#include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -33,9 +19,9 @@
 
 
 using namespace std;
-void usage();
+void usage(char*);
 uint8_t bitLength(uint64_t value);
-
+//TODO: description
 int main(int argc, char* argv[]){
     //TODO: help
     //TODO: error checking
@@ -56,7 +42,7 @@ int main(int argc, char* argv[]){
     }
     int argIndex = 1;
     if(argv[1] == NULL){
-        usage();
+        usage(argv[0]);
         return 0;
     }
     ofstream logFile("smac.log");
@@ -106,7 +92,7 @@ int main(int argc, char* argv[]){
         
         argIndex++;
         if((argv[argIndex] == NULL)||(argIndex > 9)||(argIndex > argc - 2)){
-            usage();
+            usage(argv[0]);
             return 0;
         }
     }
@@ -358,8 +344,8 @@ int main(int argc, char* argv[]){
     return 0;
 }
 
-void usage(){
-    cout << "Usage: " << endl;
+void usage(char* programName){
+    printf("Usage: %s options source destDir", programName);
 }
 
 uint8_t bitLength(uint64_t value){
