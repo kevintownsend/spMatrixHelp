@@ -20,5 +20,10 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
+test: testSmac
+
+testSmac : smac
+	smac
+
 clear :
 	rm -rf *.o *.a
