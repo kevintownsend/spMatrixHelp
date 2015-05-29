@@ -20,7 +20,13 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
-test: testSmac
+rcr :
+	g++ -o rcr rcr.cpp
+
+test: testRcr
+
+testRcr: rcr
+	rcr
 
 testSmac : smac
 	smac
