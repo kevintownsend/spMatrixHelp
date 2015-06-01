@@ -20,16 +20,19 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
-rcr :
-	g++ -o rcr rcr.cpp
+rcr : rcr.cpp
+	g++ -std=gnu++0x -o rcr rcr.cpp
 
 test: testRcr
 
 testRcr: rcr
-	rcr
+	rcr < example.mtx > example.rcr
 
 testSmac : smac
 	smac
 
 clear :
 	rm -rf *.o *.a
+
+vim :
+	vim -p makefile rcr.cpp
