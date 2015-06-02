@@ -107,10 +107,19 @@ int main(int argc, char* argv[]){
             currBit = currBit + codeMap[deltas[i]].encode_length;
         }
     }
+    if(currBit != 0)
+        encodedStream.push_back(latest);
     //TODO: decoding
+
 }
 
-vector<ll> decode(vector<ll> stream, vector<Code> codes){
+vector<ll> decode(vector<ll> stream, vector<Code> codes, ll length){
+    int currBit = 0;
+    vector<ll> decoded;
+    map<ll, Code> codesMap;
+    for(int i = 0; i < codes.size(); ++i){
+        codesMap[codes[i].encode] = codes[i];
+    }
 }
 
 vector<Code> createCodes(vector<ll> &distribution){
