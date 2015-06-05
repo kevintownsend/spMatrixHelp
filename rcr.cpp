@@ -4,13 +4,19 @@
 #include <map>
 #include <algorithm>
 
+//TODO: newlines
+//TODO: support very large deltas
+//gamma code after greater than 64
+//use 16 codes
+
 using namespace std;
 typedef long long ll;
+typedef unsigned long long ull;
 char buffer[200];
 struct Code{
-    ll encode;
+    ull encode;
     int encode_length;
-    ll delta;
+    ull delta;
 };
 
 struct Node{
@@ -25,13 +31,17 @@ bool compare(Node left, Node right){
 }
 
 vector<Code> createCodes(vector<ll> &distribution);
-ll BitsToInt(vector<bool> bits);
+ull BitsToInt(vector<bool> bits);
+vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
 
 int main(int argc, char* argv[]){
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
     int M, N, nnz;
     scanf("%d %d %d", &M, &N, &nnz);
+    //TODO: sub row sub col
+    int subRow=4;
+    int subCol=2;
     vector<ll> row;
     vector<ll> col;
     vector<double> values;
@@ -47,17 +57,17 @@ int main(int argc, char* argv[]){
     //rcr 42
     map<ll, map<ll, map<ll, map<ll, double> > > > matrix;
     for(ll i = 0; i < nnz; ++i){
-        matrix[row[i]/4][col[i]/2][row[i]%4][col[i]%2] = 1;
+        matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = 1;
     }
     vector<ll> deltas;
     ll delta = -1;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
-        delta += (i1->first - p1)*4*N; //new line
+        //delta += (i1->first - p1)*4*N; //new line
         for(auto i2 = i1->second.begin(); i2 != i1->second.end(); ++i2){
-            delta += (i2->first - p2)*4*2;
+            delta += (i2->first - p2)*subRow*subCol;
             for(auto i3 = i2->second.begin(); i3 != i2->second.end(); ++i3){
-                delta += (i3->first - p3)*2;
+                delta += (i3->first - p3)*subCol;
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
                     deltas.push_back(delta+1);
@@ -69,33 +79,41 @@ int main(int argc, char* argv[]){
             p2 = i2->first;
         }
         p1 = i1->first;
+        delta = 0;
+        p2=0; p3=0; p4=0;
+        deltas.push_back(-1);
     }
     vector<ll> distribution;
     distribution.resize(64);
 
     for(int i = 0; i < deltas.size(); ++i){
-        if(deltas[i] < 64)
+        if(deltas[i] == -1)
+            distribution[64]++;
+        else if(deltas[i] < 64)
             distribution[deltas[i]]++;
         else
             distribution[63]++;
-        cerr << deltas[i] << endl;
+        cerr << deltas[i] << " ";
     }
+    cerr << endl;
 
-    cerr << "distribution:" << endl;
-    for(int i = 0; i < 64; ++i){
-        cerr << distribution[i] << endl;
-    }
+//    cerr << "distribution:" << endl;
+//    for(int i = 0; i < 64; ++i){
+//        cerr << distribution[i] << endl;
+//    }
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
     for(int i = 0; i < codes.size(); ++i){
         codeMap[codes[i].delta] = codes[i];
     }
-    vector<ll> encodedStream;
+    vector<ull> encodedStream;
     ll currBit = 0;
     ll latest = 0;
+//    cerr << "encoding:\n";
     for(ll i = 0; i < deltas.size(); ++i){
+//        cerr << "here\n";
         latest |= codeMap[deltas[i]].encode << currBit;
-        if(currBit +codeMap[deltas[i]].encode_length == 64){
+        if(currBit + codeMap[deltas[i]].encode_length == 64){
             encodedStream.push_back(latest);
             latest = 0;
             currBit = 0;
@@ -110,16 +128,68 @@ int main(int argc, char* argv[]){
     if(currBit != 0)
         encodedStream.push_back(latest);
     //TODO: decoding
-
+    cerr << "info: " << encodedStream.size() << endl;
+    int length = currBit;
+    if(currBit == 0)
+        length += 64*encodedStream.size();
+    else
+        length += 64*(encodedStream.size() - 1);
+    vector<ll> decodedDeltas = decode(encodedStream, codes, length);
+    cerr << "decoding:" << endl;
+    for(int i = 0; i < decodedDeltas.size(); ++i){
+        cerr << decodedDeltas[i] << " ";
+    }
+    cerr << endl;
+    //TODO: deltas to indices
 }
 
-vector<ll> decode(vector<ll> stream, vector<Code> codes, ll length){
+struct reverseCmp {
+    bool operator() (ull left, ull right) const{
+        for(int i = 0; i < 64; ++i){
+            if((left & (1LL << i)) < (right & (1LL << i)))
+                return true;
+            if((left & (1LL << i)) > (right & (1LL << i)))
+                return false;
+        }
+        return false;
+    }
+};
+
+vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
     int currBit = 0;
     vector<ll> decoded;
-    map<ll, Code> codesMap;
+    map<ull, Code, reverseCmp> codesMap;
     for(int i = 0; i < codes.size(); ++i){
         codesMap[codes[i].encode] = codes[i];
     }
+    //TODO: print codes
+    int i = 0;
+//    for(auto it = codesMap.begin(); it != codesMap.end(); ++it){
+//        cerr << dec << "code index: " << i++ << endl;
+//        cerr << hex << "encode: " << it->first << endl;
+//        cerr << dec << "delta: " << it->second.delta << endl;
+//    }
+    while(currBit < length) {
+        cerr << "currBit: " << currBit << endl;
+        cerr << "length: " << length << endl;
+        ull latest = stream[currBit/64] >> (currBit % 64);
+        if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
+            latest |= stream[currBit/64+1] << (64 - currBit % 64);
+
+//        cerr << "decode: \n";
+//        cerr << hex << latest << endl;
+//        if(codesMap.lower_bound(latest) == codesMap.end())
+//            cerr << "wtf" << endl;
+//        cerr << hex << codesMap.lower_bound(latest)->first << endl;
+        //cerr << hex << ((codesMap.lower_bound(latest))-1)->first << endl;
+        auto it = codesMap.upper_bound(latest);
+        --it;
+        Code tmp = it->second;
+        //cerr << "delta: " << it->second.delta << endl;
+        currBit += tmp.encode_length;
+        decoded.push_back(tmp.delta);
+    }
+    return decoded;
 }
 
 vector<Code> createCodes(vector<ll> &distribution){
@@ -139,10 +209,10 @@ vector<Code> createCodes(vector<ll> &distribution){
         tmp.frequency = tree[i].frequency + tree[i+1].frequency;
         tree.push_back(tmp);
     }
-    cerr << "test\n";
-    for(int i = 0; i < tree.size(); ++i){
-        cerr << tree[i].frequency << endl;
-    }
+//    cerr << "test\n";
+//    for(int i = 0; i < tree.size(); ++i){
+//        cerr << tree[i].frequency << endl;
+//    }
 
     //TODO: create codes
     vector<bool> path;
@@ -150,7 +220,9 @@ vector<Code> createCodes(vector<ll> &distribution){
     vector<int> phase;
     int curr = tree.size() - 1;
     phase.push_back(0);
-    while(phase[0] != 2){
+    while(phase[0] != 2 || phase.size() != 1){
+//        cerr << "dfs: " << curr << endl;
+//        cerr << "children: " << tree[curr].left << " and " << tree[curr].right << endl;
         switch(phase.back()){
             case 0:
                 phase[phase.size()-1] = 1;
@@ -171,31 +243,38 @@ vector<Code> createCodes(vector<ll> &distribution){
                 }
                 break;
             case 2:
-                phase.pop_back();
-                curr=parentStack.back();
-                parentStack.pop_back();
-                path.pop_back();
                 if(tree[curr].left == -1 && tree[curr].right == -1){
                     Code tmp = tree[curr].code;
                     tmp.encode = BitsToInt(path);
                     tmp.encode_length = path.size();
                     codes.push_back(tmp);
                 }
+                phase.pop_back();
+                curr=parentStack.back();
+                parentStack.pop_back();
+                path.pop_back();
                 break;
             default:
                 break;
         }
     }
+//    cerr << "codes: " << codes.size() << endl;
+//    for(int i = 0; i < codes.size(); ++i){
+//        cerr << "index: " << i << ":\n";
+//        cerr << "encode: " << codes[i].encode << endl;
+//        cerr << "encode length: " << codes[i].encode_length << endl;
+//        cerr << "delta: " << codes[i].delta << endl;
+//    }
     return codes;
 }
 
-ll BitsToInt(vector<bool> bits){
-    ll ret = 0;
+ull BitsToInt(vector<bool> bits){
+    ull ret = 0;
     if(bits.size() > 64)
         cerr << "ERROR: too many bits" << endl;
-    for(int i = 0; i < bits.size(); ++i){
+    for(ull i = 0; i < bits.size(); ++i){
         if(bits[i])
-            ret |= 1 << i;
+            ret |= 1LL << i;
     }
     return ret;
 }
