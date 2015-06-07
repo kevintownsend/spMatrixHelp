@@ -34,6 +34,15 @@ vector<Code> createCodes(vector<ll> &distribution);
 ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
 
+int Log2(int n){
+    int ret = 0;
+    while(n){
+        ret++;
+        n>>=1;
+    }
+    return ret;
+}
+
 int main(int argc, char* argv[]){
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
@@ -55,13 +64,14 @@ int main(int argc, char* argv[]){
         col.push_back(tmp2-1);
     }
     //rcr 42
-    map<ll, map<ll, map<ll, map<ll, double> > > > matrix;
+    map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
-        matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = 1;
+        matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
     }
     vector<ll> deltas;
-    ll delta = -1;
+    ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
+    cerr << "new order: \n";
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
         //delta += (i1->first - p1)*4*N; //new line
         for(auto i2 = i1->second.begin(); i2 != i1->second.end(); ++i2){
@@ -69,12 +79,15 @@ int main(int argc, char* argv[]){
             for(auto i3 = i2->second.begin(); i3 != i2->second.end(); ++i3){
                 delta += (i3->first - p3)*subCol;
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
+                    //TODO: print order
+                    cerr << i4->second.first << " " << i4->second.second << endl;
                     delta += i4->first - p4;
-                    deltas.push_back(delta+1);
-                    delta = 0;
+                    deltas.push_back(delta);
+                    cerr << "delta: " << delta << endl;
+                    delta = -1;
                     p4 = i4->first;
                 }
-                p4 = i3->first;
+                p3 = i3->first;
             }
             p2 = i2->first;
         }
@@ -84,15 +97,16 @@ int main(int argc, char* argv[]){
         deltas.push_back(-1);
     }
     vector<ll> distribution;
-    distribution.resize(64);
+    int huffmanCodesSize = 6;
+    distribution.resize(huffmanCodesSize);
 
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
-            distribution[64]++;
-        else if(deltas[i] < 64)
+            distribution[huffmanCodesSize-2]++;
+        else if(deltas[i] < huffmanCodesSize-2)
             distribution[deltas[i]]++;
         else
-            distribution[63]++;
+            distribution[huffmanCodesSize-1]++;
         cerr << deltas[i] << " ";
     }
     cerr << endl;
@@ -104,7 +118,11 @@ int main(int argc, char* argv[]){
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
     for(int i = 0; i < codes.size(); ++i){
-        codeMap[codes[i].delta] = codes[i];
+        if(codes[i].delta == huffmanCodesSize-2){
+            codes[i].delta = -1;
+            codeMap[-1] = codes[i];
+    }else
+            codeMap[codes[i].delta] = codes[i];
     }
     vector<ull> encodedStream;
     ll currBit = 0;
@@ -112,17 +130,48 @@ int main(int argc, char* argv[]){
 //    cerr << "encoding:\n";
     for(ll i = 0; i < deltas.size(); ++i){
 //        cerr << "here\n";
-        latest |= codeMap[deltas[i]].encode << currBit;
-        if(currBit + codeMap[deltas[i]].encode_length == 64){
+        int delta = deltas[i];
+        if(delta >= huffmanCodesSize-2)
+            delta = huffmanCodesSize-1;
+        latest |= codeMap[delta].encode << currBit;
+        if(currBit + codeMap[delta].encode_length == 64){
             encodedStream.push_back(latest);
             latest = 0;
             currBit = 0;
-        }else if(currBit + codeMap[deltas[i]].encode_length > 64){
+        }else if(currBit + codeMap[delta].encode_length > 64){
             encodedStream.push_back(latest);
-            latest = codeMap[deltas[i]].encode >> (64-currBit);
-            currBit = (currBit + codeMap[deltas[i]].encode_length) % 64;
+            latest = codeMap[delta].encode >> (64-currBit);
+            currBit = (currBit + codeMap[delta].encode_length) % 64;
         }else{
-            currBit = currBit + codeMap[deltas[i]].encode_length;
+            currBit = currBit + codeMap[delta].encode_length;
+        }
+        //TODO: gamma code
+        if(delta == huffmanCodesSize-1){
+            int zerosNeeded = Log2(deltas[i]) - Log2(huffmanCodesSize-2);
+            cerr << "zerosNeeded: " << zerosNeeded << endl;
+            if(currBit + zerosNeeded >= 64){
+                encodedStream.push_back(latest);
+                latest=0;
+            }
+            currBit = (currBit + zerosNeeded) % 64;
+            latest |= 1 << currBit;
+            currBit++;
+            ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])-1));
+            cerr << "delta wo msb: " << delta << endl;
+            latest |= delta << currBit;
+            int width = Log2(deltas[i])-1;
+            if(currBit + width == 64){
+                encodedStream.push_back(latest);
+                latest = 0;
+                currBit = 0;
+            }else if(currBit + width > 64){
+                encodedStream.push_back(latest);
+                latest = delta >> (64-currBit);
+                currBit = (currBit + width) % 64;
+            }else{
+                currBit += width;
+            }
+            //TODO: bits except first
         }
     }
     if(currBit != 0)
@@ -187,6 +236,10 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
         Code tmp = it->second;
         //cerr << "delta: " << it->second.delta << endl;
         currBit += tmp.encode_length;
+        //TODO: decode gamma code
+        if(tmp.delta == codes.size() - 1){
+            cerr << "decoding gamma code" << endl;
+        }
         decoded.push_back(tmp.delta);
     }
     return decoded;
