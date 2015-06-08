@@ -239,8 +239,17 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
         //TODO: decode gamma code
         if(tmp.delta == codes.size() - 1){
             cerr << "decoding gamma code" << endl;
+            latest = stream[currBit/64] >> (currBit % 64);
+            if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
+                latest |= stream[currBit/64+1] << (64 - currBit % 64);
+            
+            //TODO: 0s
+            //TODO: 1
+            //TODO: delta
+
+        }else{
+            decoded.push_back(tmp.delta);
         }
-        decoded.push_back(tmp.delta);
     }
     return decoded;
 }
