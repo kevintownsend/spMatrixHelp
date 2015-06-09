@@ -40,7 +40,7 @@ int Log2(int n){
         ret++;
         n>>=1;
     }
-    return ret;
+    return ret-1;
 }
 
 int main(int argc, char* argv[]){
@@ -156,10 +156,10 @@ int main(int argc, char* argv[]){
             currBit = (currBit + zerosNeeded) % 64;
             latest |= 1 << currBit;
             currBit++;
-            ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])-1));
+            ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])));
             cerr << "delta wo msb: " << delta << endl;
             latest |= delta << currBit;
-            int width = Log2(deltas[i])-1;
+            int width = Log2(deltas[i]);
             if(currBit + width == 64){
                 encodedStream.push_back(latest);
                 latest = 0;
@@ -190,6 +190,7 @@ int main(int argc, char* argv[]){
     }
     cerr << endl;
     //TODO: deltas to indices
+    //TODO: check
 }
 
 struct reverseCmp {
@@ -242,11 +243,24 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
             latest = stream[currBit/64] >> (currBit % 64);
             if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
                 latest |= stream[currBit/64+1] << (64 - currBit % 64);
-            
-            //TODO: 0s
-            //TODO: 1
-            //TODO: delta
-
+            int width = 0;
+            while(!(latest & 1)){
+                currBit++;
+                latest >>= 1;
+                width++;
+            }
+            cerr << "width: " << width << endl;
+            width += Log2(codes.size()-2);
+            currBit++;
+            latest >>= 1;
+            ull mask = -1;
+            if(width != 0)
+                mask >>= (64-width);
+            else
+                mask = 0;
+            ll delta = (latest & mask) | (1LL << width);
+            decoded.push_back(delta);
+            currBit += width;
         }else{
             decoded.push_back(tmp.delta);
         }
