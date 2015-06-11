@@ -46,6 +46,10 @@ int Log2(int n){
 int main(int argc, char* argv[]){
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
+    string matrixCode;
+    bool pattern = true;
+    if(string(buffer).find("real") != string::npos)
+        pattern = false;
     int M, N, nnz;
     scanf("%d %d %d", &M, &N, &nnz);
     //TODO: sub row sub col
@@ -59,7 +63,12 @@ int main(int argc, char* argv[]){
     cerr << N << "\n";
     for(ll i = 0; i < nnz; ++i){
         ll tmp1, tmp2;
-        scanf("%ld %ld", &tmp1, &tmp2);
+        if(!pattern){
+            double tmp3;
+            scanf("%lld %lld %llf", &tmp1, &tmp2, &tmp3);
+        }else{
+            scanf("%lld %lld", &tmp1, &tmp2);
+        }
         row.push_back(tmp1-1);
         col.push_back(tmp2-1);
     }
@@ -71,19 +80,17 @@ int main(int argc, char* argv[]){
     vector<ll> deltas;
     ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
-    cerr << "new order: \n";
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
         //delta += (i1->first - p1)*4*N; //new line
+        for(int i = 0; i < i1->first - p1; ++i)
+            deltas.push_back(-1);
         for(auto i2 = i1->second.begin(); i2 != i1->second.end(); ++i2){
             delta += (i2->first - p2)*subRow*subCol;
             for(auto i3 = i2->second.begin(); i3 != i2->second.end(); ++i3){
                 delta += (i3->first - p3)*subCol;
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
-                    //TODO: print order
-                    cerr << i4->second.first << " " << i4->second.second << endl;
                     delta += i4->first - p4;
                     deltas.push_back(delta);
-                    cerr << "delta: " << delta << endl;
                     delta = -1;
                     p4 = i4->first;
                 }
@@ -94,7 +101,6 @@ int main(int argc, char* argv[]){
         p1 = i1->first;
         delta = 0;
         p2=0; p3=0; p4=0;
-        deltas.push_back(-1);
     }
     vector<ll> distribution;
     int huffmanCodesSize = 6;
@@ -107,14 +113,8 @@ int main(int argc, char* argv[]){
             distribution[deltas[i]]++;
         else
             distribution[huffmanCodesSize-1]++;
-        cerr << deltas[i] << " ";
     }
-    cerr << endl;
 
-//    cerr << "distribution:" << endl;
-//    for(int i = 0; i < 64; ++i){
-//        cerr << distribution[i] << endl;
-//    }
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
     for(int i = 0; i < codes.size(); ++i){
@@ -127,9 +127,7 @@ int main(int argc, char* argv[]){
     vector<ull> encodedStream;
     ll currBit = 0;
     ll latest = 0;
-//    cerr << "encoding:\n";
     for(ll i = 0; i < deltas.size(); ++i){
-//        cerr << "here\n";
         int delta = deltas[i];
         if(delta >= huffmanCodesSize-2)
             delta = huffmanCodesSize-1;
@@ -148,16 +146,20 @@ int main(int argc, char* argv[]){
         //TODO: gamma code
         if(delta == huffmanCodesSize-1){
             int zerosNeeded = Log2(deltas[i]) - Log2(huffmanCodesSize-2);
-            cerr << "zerosNeeded: " << zerosNeeded << endl;
             if(currBit + zerosNeeded >= 64){
                 encodedStream.push_back(latest);
                 latest=0;
             }
             currBit = (currBit + zerosNeeded) % 64;
-            latest |= 1 << currBit;
+            latest |= 1ULL << currBit;
             currBit++;
+            if(currBit == 64){
+                encodedStream.push_back(latest);
+                latest=0;
+                currBit = 0;
+            }
+
             ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])));
-            cerr << "delta wo msb: " << delta << endl;
             latest |= delta << currBit;
             int width = Log2(deltas[i]);
             if(currBit + width == 64){
@@ -176,19 +178,27 @@ int main(int argc, char* argv[]){
     }
     if(currBit != 0)
         encodedStream.push_back(latest);
-    //TODO: decoding
-    cerr << "info: " << encodedStream.size() << endl;
+
+    //decoding
     int length = currBit;
     if(currBit == 0)
         length += 64*encodedStream.size();
     else
         length += 64*(encodedStream.size() - 1);
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
-    cerr << "decoding:" << endl;
-    for(int i = 0; i < decodedDeltas.size(); ++i){
-        cerr << decodedDeltas[i] << " ";
+    if(false){
+        for(int i = 0; i < decodedDeltas.size(); ++i){
+            cerr << dec << decodedDeltas[i] << " ";
+            if(decodedDeltas[i] != deltas[i]){
+                cerr << endl;
+                cerr << "ERROR: missmatch" << endl;
+                cerr << "index: " << i << endl;
+                cerr << "real: " << deltas[i] << endl;
+                cerr << "decoded: " << decodedDeltas[i] << endl;
+                return 1;
+            }
+        }
     }
-    cerr << endl;
     //TODO: deltas to indices
     //TODO: check
 }
@@ -220,8 +230,6 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
 //        cerr << dec << "delta: " << it->second.delta << endl;
 //    }
     while(currBit < length) {
-        cerr << "currBit: " << currBit << endl;
-        cerr << "length: " << length << endl;
         ull latest = stream[currBit/64] >> (currBit % 64);
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
             latest |= stream[currBit/64+1] << (64 - currBit % 64);
@@ -239,7 +247,6 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
         currBit += tmp.encode_length;
         //TODO: decode gamma code
         if(tmp.delta == codes.size() - 1){
-            cerr << "decoding gamma code" << endl;
             latest = stream[currBit/64] >> (currBit % 64);
             if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
                 latest |= stream[currBit/64+1] << (64 - currBit % 64);
@@ -249,7 +256,6 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
                 latest >>= 1;
                 width++;
             }
-            cerr << "width: " << width << endl;
             width += Log2(codes.size()-2);
             currBit++;
             latest >>= 1;

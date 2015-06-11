@@ -23,10 +23,22 @@ release :
 rcr : rcr.cpp
 	g++ -std=gnu++0x -o rcr rcr.cpp
 
-test: testRcr
+test: testRcr testSmallQcd
 
 testRcr: rcr
 	rcr < example.mtx > example.rcr
+
+testCant:
+	rcr < benchmark/cant.mtx > cant.rcr
+
+testDense:
+	rcr < benchmark/dense2.mtx > dense.rcr
+
+testQcd:
+	rcr < benchmark/qcd5_4.mtx > qcd.rcr
+
+testSmallQcd:
+	rcr < qcdSmall.mtx > smallQcd.rcr
 
 testSmac : smac
 	smac
