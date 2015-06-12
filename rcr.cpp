@@ -122,7 +122,7 @@ int main(int argc, char* argv[]){
             codes[i].delta = -1;
             codeMap[-1] = codes[i];
     }else
-            codeMap[codes[i].delta] = codes[i];
+        codeMap[codes[i].delta] = codes[i];
     }
     vector<ull> encodedStream;
     ll currBit = 0;
@@ -178,6 +178,18 @@ int main(int argc, char* argv[]){
     }
     if(currBit != 0)
         encodedStream.push_back(latest);
+    cerr << "size: " << (encodedStream.size()*8) << endl;
+    cerr << "per index: " << (encodedStream.size()*64.0/deltas.size()) << endl;
+    //TODO: print rcr file
+    //number of codes
+    ll tmp = codes.size();
+    char* printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        printf("%c", printerPtr[i]);
+    }
+    //codes
+    //bits in stream
+    //stream
 
     //decoding
     int length = currBit;
@@ -185,6 +197,7 @@ int main(int argc, char* argv[]){
         length += 64*encodedStream.size();
     else
         length += 64*(encodedStream.size() - 1);
+
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
         for(int i = 0; i < decodedDeltas.size(); ++i){

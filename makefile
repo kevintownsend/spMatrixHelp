@@ -37,6 +37,16 @@ testDense:
 testQcd:
 	rcr < benchmark/qcd5_4.mtx > qcd.rcr
 
+%.rcr : %.mtx
+	rcr $< > $@
+
+testAll: benchmark/consph.rcr
+
+benchmark/consph.rcr : benchmark/consph.mtx
+
+#%.bin : %.fasta.gz
+#	gunzip -c $< | ./fasta2bin > $@
+
 testSmallQcd:
 	rcr < qcdSmall.mtx > smallQcd.rcr
 
@@ -47,4 +57,4 @@ clear :
 	rm -rf *.o *.a
 
 vim :
-	vim -p makefile rcr.cpp
+	vim -p makefile rcr.cpp ../shepard/reference/Makefile
