@@ -38,9 +38,15 @@ testQcd:
 	rcr < benchmark/qcd5_4.mtx > qcd.rcr
 
 %.rcr : %.mtx
-	rcr $< > $@
+	rcr < $< > $@
 
-testAll: benchmark/consph.rcr
+testAll: benchmark/consph.rcr benchmark/cant.rcr benchmark/cop20k_A.rcr benchmark/dense2.rcr benchmark/mac_econ_fwd500.rcr benchmark/mc2depi.rcr benchmark/pdb1HYS.rcr benchmark/pwtk.rcr benchmark/qcd5_4.rcr benchmark/rail4284.rcr benchmark/rma10.rcr benchmark/scircuit.rcr benchmark/shipsec1.rcr benchmark/webbase-1M.rcr
+
+cleanRcr:
+	rm benchmark/*.rcr log
+
+runBenchmark: cleanRcr testAll
+	sum.py
 
 benchmark/consph.rcr : benchmark/consph.mtx
 
@@ -53,7 +59,7 @@ testSmallQcd:
 testSmac : smac
 	smac
 
-clear :
+clean :
 	rm -rf *.o *.a
 
 vim :

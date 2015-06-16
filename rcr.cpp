@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <fstream>
 
 //TODO: newlines
 //TODO: support very large deltas
@@ -178,8 +179,12 @@ int main(int argc, char* argv[]){
     }
     if(currBit != 0)
         encodedStream.push_back(latest);
-    cerr << "size: " << (encodedStream.size()*8) << endl;
-    cerr << "per index: " << (encodedStream.size()*64.0/deltas.size()) << endl;
+    cerr << "Size (bytes): " << (encodedStream.size()*8) << endl;
+    cerr << "Bits per index: " << (encodedStream.size()*64.0/deltas.size()) << endl;
+    double averageBits = (encodedStream.size()*64.0/deltas.size());
+    ofstream log("log", ofstream::app);
+    log << averageBits << endl;
+
     //TODO: print rcr file
     //number of codes
     ll tmp = codes.size();
