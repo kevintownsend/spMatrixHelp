@@ -1,5 +1,5 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o
+all : spm smac spMatrixHelp.o rcr
 
 mcv.o : mcv.cpp
 	g++ -O3 -c mcv.cpp

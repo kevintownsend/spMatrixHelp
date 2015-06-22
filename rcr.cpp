@@ -34,6 +34,7 @@ bool compare(Node left, Node right){
 vector<Code> createCodes(vector<ll> &distribution);
 ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
+bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename);
 
 int Log2(int n){
     int ret = 0;
@@ -66,7 +67,7 @@ int main(int argc, char* argv[]){
         ll tmp1, tmp2;
         if(!pattern){
             double tmp3;
-            scanf("%lld %lld %llf", &tmp1, &tmp2, &tmp3);
+            scanf("%lld %lld %lf", &tmp1, &tmp2, &tmp3);
         }else{
             scanf("%lld %lld", &tmp1, &tmp2);
         }
@@ -185,16 +186,6 @@ int main(int argc, char* argv[]){
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
 
-    //TODO: print rcr file
-    //number of codes
-    ll tmp = codes.size();
-    char* printerPtr = (char*)&tmp;
-    for(int i = 0; i < 8; ++i){
-        printf("%c", printerPtr[i]);
-    }
-    //codes
-    //bits in stream
-    //stream
 
     //decoding
     int length = currBit;
@@ -202,6 +193,7 @@ int main(int argc, char* argv[]){
         length += 64*encodedStream.size();
     else
         length += 64*(encodedStream.size() - 1);
+    writeToFile(encodedStream, codes, length, "output.rcr");
 
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
@@ -232,6 +224,34 @@ struct reverseCmp {
         return false;
     }
 };
+bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename){
+    FILE* output = fopen(filename.c_str(),"w");
+    //TODO: print rcr file
+    //number of codes
+    ull tmp = codes.size();
+    char* printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        printf("%c", printerPtr[i]);
+    }
+    for(int i = 0; i < codes.size(); ++i){
+        tmp = codes[i].encode;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fprintf(output, "%c", printerPtr[j]);
+        tmp = codes[i].encode_length;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fprintf(output, "%c", printerPtr[j]);
+        tmp = codes[i].delta;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fprintf(output, "%c", printerPtr[j]);
+    }
+    //codes
+    //bits in stream
+    //stream
+    return true;
+}
 
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
     int currBit = 0;
