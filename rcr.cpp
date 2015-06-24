@@ -35,6 +35,7 @@ vector<Code> createCodes(vector<ll> &distribution);
 ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
 bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename);
+bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
 
 int Log2(int n){
     int ret = 0;
@@ -194,6 +195,10 @@ int main(int argc, char* argv[]){
     else
         length += 64*(encodedStream.size() - 1);
     writeToFile(encodedStream, codes, length, "output.rcr");
+    vector<ull> reencodedStream;
+    vector<Code> recodes;
+    ll relength;
+    readFromFile(reencodedStream, recodes, relength, "output.rcr");
 
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
@@ -230,8 +235,9 @@ bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filen
     //number of codes
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
+    cerr << "output codes size: " << (*printerPtr) << endl;
     for(int i = 0; i < 8; ++i){
-        printf("%c", printerPtr[i]);
+        fprintf(output, "%c", printerPtr[i]);
     }
     for(int i = 0; i < codes.size(); ++i){
         tmp = codes[i].encode;
@@ -250,6 +256,25 @@ bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filen
     //codes
     //bits in stream
     //stream
+    fclose(output);
+    return true;
+}
+bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename){
+    FILE* input = fopen(filename.c_str(), "r");
+    ull codesSize;
+    ull tmp;
+    char* printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        cerr << ((int)*printerPtr) << endl;
+        printerPtr++;
+    }
+    cerr << "read codes size: " << tmp << endl;
+    ll codeCount = tmp;
+    for(int i = 0; i < tmp; ++i){
+        for(
+    }
+    fclose(input);
     return true;
 }
 
