@@ -272,7 +272,8 @@ bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string f
     cerr << "read codes size: " << tmp << endl;
     ll codeCount = tmp;
     for(int i = 0; i < tmp; ++i){
-        for(
+        for(int j = 0; j < 8; ++j)
+            fscanf(input, "%c", printerPtr++);
     }
     fclose(input);
     return true;
