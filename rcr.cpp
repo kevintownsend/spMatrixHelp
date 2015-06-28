@@ -271,13 +271,25 @@ bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string f
     }
     cerr << "read codes size: " << tmp << endl;
     ll codeCount = tmp;
-    for(int i = 0; i < tmp; ++i){
+    for(int i = 0; i < codeCount; ++i){
+        Code tmpCode;
+        printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
             fscanf(input, "%c", printerPtr++);
+        tmpCode.encode = tmp;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fscanf(input, "%c", printerPtr++);
+        tmpCode.encode_length = tmp;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fscanf(input, "%c", printerPtr++);
+        tmpCode.delta = tmp;
     }
     fclose(input);
     return true;
 }
+//TODO check equality
 
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
     int currBit = 0;
