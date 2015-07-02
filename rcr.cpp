@@ -290,6 +290,9 @@ bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string f
     return true;
 }
 //TODO check equality
+bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew){
+    return true;
+}
 
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
     int currBit = 0;
