@@ -291,6 +291,12 @@ bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string f
 }
 //TODO check equality
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew){
+    if(streamOld.size() != streamNew.size()){
+        cerr << "stream size mismatch\n";
+        return false;
+    }
+    for(int i = 0; i < streamOld.size(); ++i){
+    }
     return true;
 }
 
