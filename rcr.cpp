@@ -36,6 +36,7 @@ ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
 bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename);
 bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
+bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
 
 int Log2(int n){
     int ret = 0;
@@ -199,6 +200,7 @@ int main(int argc, char* argv[]){
     vector<Code> recodes;
     ll relength;
     readFromFile(reencodedStream, recodes, relength, "output.rcr");
+    checkEquality(encodedStream, reencodedStream, codes, recodes);
 
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
