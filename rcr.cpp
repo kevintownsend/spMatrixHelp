@@ -200,7 +200,9 @@ int main(int argc, char* argv[]){
     vector<Code> recodes;
     ll relength;
     readFromFile(reencodedStream, recodes, relength, "output.rcr");
-    checkEquality(encodedStream, reencodedStream, codes, recodes);
+    if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
+        cerr << "check failed" << endl;
+    }
 
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
@@ -298,6 +300,18 @@ bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> 
         return false;
     }
     for(int i = 0; i < streamOld.size(); ++i){
+        if(streamOld[i] != streamNew[i])
+            return false;
+    }
+    if(codesOld.size() != codesNew.size())
+        return false;
+    for(int i = 0; i < codesOld.size(); ++i){
+        if(codesOld[i].encode != codesNew[i].encode)
+            return false;
+        if(codesOld[i].encode_length != codesOld[i].encode_length)
+            return false;
+        if(codesOld[i].delta != codesOld[i].delta)
+            return false;
     }
     return true;
 }
