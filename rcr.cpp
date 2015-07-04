@@ -259,6 +259,18 @@ bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filen
     }
     //codes
     //bits in stream
+    tmp = length;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fprintf(output, "%c", printerPtr[i]);
+    }
+    for(int i = 0; i < stream.size(); ++i){
+        tmp = stream[i];
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j){
+            fprintf(output, "%c", printerPtr[j]);
+        }
+    }
     //stream
     fclose(output);
     return true;
