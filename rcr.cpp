@@ -47,7 +47,50 @@ int Log2(int n){
     return ret-1;
 }
 
+struct Options{
+    Options(int argc, char* argv[]){
+        cerr << "hello world" << endl;
+        if(argc == 1)
+            return;
+        int currentArg = 1;
+        int fileNamesRead = 0;
+        while(currentArg < argc){
+            string arg(argv[currentArg]);
+            //if(arg.
+            //TODO: check if prefix is --
+            //TODO: check if prefix is --
+            //TODO: else use as filename
+            currentArg++;
+        }
+        string firstOption(argv[1]);
+        if(firstOption == "-x"){
+            this->compress = false;
+            cerr << "extract" << endl;
+        }else if(firstOption == "-c"){
+            this->compress = true;
+            cerr << "compress" << endl;
+        }else{
+            cerr << "option error" << endl;
+        }
+
+        if(argc == 2)
+            return;
+        inputFilename = string(argv[1]);
+        if(argc == 3)
+            return;
+        outputFilename = string(argv[2]);
+    }
+    bool compress;
+    int subHeight;
+    int subWidth;
+    string inputFilename;
+    string outputFilename;
+};
+
 int main(int argc, char* argv[]){
+    Options mainOptions(argc,argv);
+    //TODO: route inputfile to cin
+    //TODO: route outputfile to cout
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
     string matrixCode;
@@ -109,7 +152,6 @@ int main(int argc, char* argv[]){
     vector<ll> distribution;
     int huffmanCodesSize = 6;
     distribution.resize(huffmanCodesSize);
-
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
             distribution[huffmanCodesSize-2]++;
@@ -118,7 +160,6 @@ int main(int argc, char* argv[]){
         else
             distribution[huffmanCodesSize-1]++;
     }
-
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
     for(int i = 0; i < codes.size(); ++i){
@@ -162,7 +203,6 @@ int main(int argc, char* argv[]){
                 latest=0;
                 currBit = 0;
             }
-
             ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])));
             latest |= delta << currBit;
             int width = Log2(deltas[i]);
@@ -187,8 +227,6 @@ int main(int argc, char* argv[]){
     double averageBits = (encodedStream.size()*64.0/deltas.size());
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
-
-
     //decoding
     int length = currBit;
     if(currBit == 0)
@@ -203,7 +241,6 @@ int main(int argc, char* argv[]){
     if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
         cerr << "check failed" << endl;
     }
-
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     if(false){
         for(int i = 0; i < decodedDeltas.size(); ++i){
@@ -301,7 +338,23 @@ bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string f
         for(int j = 0; j < 8; ++j)
             fscanf(input, "%c", printerPtr++);
         tmpCode.delta = tmp;
+        codes.push_back(tmpCode);
     }
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        printerPtr++;
+    }
+    length = tmp;
+    for(int i = 0; i < ((length - 1)/64 + 1); ++i){
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j){
+            fscanf(input, "%c", printerPtr);
+            printerPtr++;
+        }
+        stream.push_back(tmp);
+    }
+
     fclose(input);
     return true;
 }

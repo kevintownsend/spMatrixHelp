@@ -26,7 +26,7 @@ rcr : rcr.cpp
 test: testRcr testSmallQcd
 
 testRcr: rcr
-	rcr < example.mtx > example.rcr
+	rcr -c < example.mtx > example.rcr
 
 testCant:
 	rcr < benchmark/cant.mtx > cant.rcr
