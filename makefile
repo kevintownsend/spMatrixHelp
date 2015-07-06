@@ -26,7 +26,7 @@ rcr : rcr.cpp
 test: testRcr testSmallQcd
 
 testRcr: rcr
-	rcr -c --subheight=4 < example.mtx > example.rcr
+	rcr -c --subheight=4 example.mtx example.rcr
 
 testCant:
 	rcr < benchmark/cant.mtx > cant.rcr
@@ -54,7 +54,7 @@ benchmark/consph.rcr : benchmark/consph.mtx
 #	gunzip -c $< | ./fasta2bin > $@
 
 testSmallQcd:
-	rcr < qcdSmall.mtx > smallQcd.rcr
+	rcr qcdSmall.mtx smallQcd.rcr
 
 testSmac : smac
 	smac

@@ -38,6 +38,7 @@ vector<Code> createCodes(vector<ll> &distribution);
 ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
 bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename);
+bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, FILE* output);
 bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
 
@@ -74,9 +75,9 @@ struct Options{
                     this->compress = false;
             }else{
                 if(fileNamesRead == 0){
-                    this->inputFilename = arg.substr(1,arg.size());
+                    this->inputFilename = arg;
                 }else if(fileNamesRead == 1){
-                    this->outputFilename = arg.substr(1,arg.size());
+                    this->outputFilename = arg;
                 }else{
                     cerr << "error" << endl;
                 }
@@ -107,6 +108,7 @@ int main(int argc, char* argv[]){
     //TODO: route outputfile to cout
     if(mainOptions.inputFilename != "")
         freopen(mainOptions.inputFilename.c_str(), "r", stdin);
+    //TODO: if compressing or extracting
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
     string matrixCode;
@@ -249,11 +251,20 @@ int main(int argc, char* argv[]){
         length += 64*encodedStream.size();
     else
         length += 64*(encodedStream.size() - 1);
-    writeToFile(encodedStream, codes, length, "output.rcr");
+    FILE* tmp;
+    //freopen(tmp, "w", stdout);
+    if(mainOptions.outputFilename == "")
+        writeToFile(encodedStream, codes, length, stdout);
+    else
+        writeToFile(encodedStream, codes, length, mainOptions.outputFilename);
+    //writeToFile(encodedStream, codes, length, "output.rcr");
+    //TODO: end
+    //Checking
     vector<ull> reencodedStream;
     vector<Code> recodes;
     ll relength;
-    readFromFile(reencodedStream, recodes, relength, "output.rcr");
+    //TODO: fix
+    readFromFile(reencodedStream, recodes, relength, mainOptions.outputFilename);
     if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
         cerr << "check failed" << endl;
     }
@@ -288,8 +299,11 @@ struct reverseCmp {
 };
 bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename){
     FILE* output = fopen(filename.c_str(),"w");
+    return writeToFile(stream, codes, length, output);
+}
     //TODO: print rcr file
     //number of codes
+bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, FILE* output){
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
     cerr << "output codes size: " << (*printerPtr) << endl;
