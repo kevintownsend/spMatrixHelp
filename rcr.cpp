@@ -97,14 +97,16 @@ struct Options{
     bool compress;
     int subHeight=4;
     int subWidth=2;
-    string inputFilename="input";
-    string outputFilename="output";
+    string inputFilename="";
+    string outputFilename="";
 };
 
 int main(int argc, char* argv[]){
     Options mainOptions(argc,argv);
     //TODO: route inputfile to cin
     //TODO: route outputfile to cout
+    if(mainOptions.inputFilename != "")
+        freopen(mainOptions.inputFilename.c_str(), "r", stdin);
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
     string matrixCode;
