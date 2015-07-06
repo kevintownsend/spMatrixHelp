@@ -98,14 +98,23 @@ struct Options{
     bool compress;
     int subHeight=4;
     int subWidth=2;
+    int huffmanEncodedDeltas=4;
     string inputFilename="";
     string outputFilename="";
 };
 
+int compress(Options mainOptions);
+int extract(Options mainOptions);
+
 int main(int argc, char* argv[]){
     Options mainOptions(argc,argv);
-    //TODO: route inputfile to cin
-    //TODO: route outputfile to cout
+    if(mainOptions.compress)
+        return compress(mainOptions);
+    else
+        return extract(mainOptions);
+}
+
+int compress(Options mainOptions){
     if(mainOptions.inputFilename != "")
         freopen(mainOptions.inputFilename.c_str(), "r", stdin);
     //TODO: if compressing or extracting
@@ -118,8 +127,8 @@ int main(int argc, char* argv[]){
     int M, N, nnz;
     scanf("%d %d %d", &M, &N, &nnz);
     //TODO: sub row sub col
-    int subRow=4;
-    int subCol=2;
+    int subRow=mainOptions.subHeight;
+    int subCol=mainOptions.subWidth;
     vector<ll> row;
     vector<ll> col;
     vector<double> values;
@@ -168,7 +177,7 @@ int main(int argc, char* argv[]){
         p2=0; p3=0; p4=0;
     }
     vector<ll> distribution;
-    int huffmanCodesSize = 6;
+    int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
     distribution.resize(huffmanCodesSize);
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
@@ -284,6 +293,32 @@ int main(int argc, char* argv[]){
     }
     //TODO: deltas to indices
     //TODO: check
+}
+int extract(Options mainOptions){
+    vector<ull> encodedStream;
+    vector<Code> codes;
+    ll length;
+    readFromFile(encodedStream, codes, length, mainOptions.inputFilename);
+    vector<ll> decodedDeltas = decode(encodedStream, codes, length);
+    //TODO:turn deltas into indices
+    ll x = -1;
+    ll y  = 0;
+    ll newLines = 0;
+    for(int i = 0; i < decodedDeltas.size(); ++i){
+        if(decodedDeltas[i] == -1){
+            newLines++;
+            x = -1;
+            y = newLines * mainOptions.subHeight;
+        }else{
+            ll leastSignificant = (decodedDeltas[i] + 1 + x % mainOptions.subWidth) % mainOptions.subWidth;
+            ll mostSignificant = (decodedDeltas[i] + 1 + x % mainOptions.subWidth) / mainOptions.subWidth;
+            x = (x / mainOptions.subWidth) * mainOptions.subWidth + leastSignificant;
+            leastSignificant = (mostSignificant + y % mainOptions.subHeight) % mainOptions.subHeight;
+            mostSignificant = (mostSignificant + y % mainOptions.subHeight) / mainOptions.subHeight;
+            //TODO: finish
+        }
+
+    }
 }
 
 struct reverseCmp {
