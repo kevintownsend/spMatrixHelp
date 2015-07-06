@@ -21,12 +21,12 @@ release :
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
 rcr : rcr.cpp
-	g++ -std=gnu++0x -o rcr rcr.cpp
+	g++ -std=c++11 -o rcr rcr.cpp
 
 test: testRcr testSmallQcd
 
 testRcr: rcr
-	rcr -c < example.mtx > example.rcr
+	rcr -c --subheight=4 < example.mtx > example.rcr
 
 testCant:
 	rcr < benchmark/cant.mtx > cant.rcr

@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <string>
 #include <iostream>
 #include <vector>
 #include <map>
 #include <algorithm>
 #include <fstream>
+#include <cstring>
+#include <cstdlib>
 
 //TODO: newlines
 //TODO: support very large deltas
@@ -56,35 +59,46 @@ struct Options{
         int fileNamesRead = 0;
         while(currentArg < argc){
             string arg(argv[currentArg]);
-            //if(arg.
+            if(arg.substr(0,2) == "--"){
+                if(arg.find("subheight"))
+                    this->subHeight = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
+                else if(arg.find("subwidth"))
+                    this->subWidth = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
+                cerr << "woot woot:" << this->subHeight << endl;
+
+            }
+            else if(arg[0] == '-'){
+                if(arg.find("c"))
+                    this->compress = true;
+                if(arg.find("x"))
+                    this->compress = false;
+            }else{
+                if(fileNamesRead == 0){
+                    this->inputFilename = arg.substr(1,arg.size());
+                }else if(fileNamesRead == 1){
+                    this->outputFilename = arg.substr(1,arg.size());
+                }else{
+                    cerr << "error" << endl;
+                }
+                fileNamesRead++;
+            }
             //TODO: check if prefix is --
             //TODO: check if prefix is --
             //TODO: else use as filename
             currentArg++;
         }
-        string firstOption(argv[1]);
-        if(firstOption == "-x"){
-            this->compress = false;
-            cerr << "extract" << endl;
-        }else if(firstOption == "-c"){
-            this->compress = true;
-            cerr << "compress" << endl;
-        }else{
-            cerr << "option error" << endl;
-        }
-
-        if(argc == 2)
-            return;
-        inputFilename = string(argv[1]);
-        if(argc == 3)
-            return;
-        outputFilename = string(argv[2]);
+        //TODO: print check
+        cerr << "compress: " << this->compress << endl;
+        cerr << "subHeight: " << this->subHeight << endl;
+        cerr << "subWidth: " << this->subWidth << endl;
+        cerr << "inputFilename: " << this->inputFilename << endl;
+        cerr << "outputFilename: " << this->outputFilename << endl;
     }
     bool compress;
-    int subHeight;
-    int subWidth;
-    string inputFilename;
-    string outputFilename;
+    int subHeight=4;
+    int subWidth=2;
+    string inputFilename="input";
+    string outputFilename="output";
 };
 
 int main(int argc, char* argv[]){
