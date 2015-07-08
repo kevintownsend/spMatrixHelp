@@ -60,6 +60,7 @@ struct Options{
         int fileNamesRead = 0;
         while(currentArg < argc){
             string arg(argv[currentArg]);
+            cerr << "processing arg: " << arg << endl;
             if(arg.substr(0,2) == "--"){
                 if(arg.find("subheight"))
                     this->subHeight = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
@@ -69,9 +70,12 @@ struct Options{
 
             }
             else if(arg[0] == '-'){
-                if(arg.find("c"))
+                cerr << "found -" << endl;
+                //TODO: figure out find
+                cerr << "location: " << arg.find("c") << endl;
+                if(arg.find("c") != string::npos)
                     this->compress = true;
-                if(arg.find("x"))
+                if(arg.find("x") != string::npos)
                     this->compress = false;
             }else{
                 if(fileNamesRead == 0){
@@ -83,9 +87,6 @@ struct Options{
                 }
                 fileNamesRead++;
             }
-            //TODO: check if prefix is --
-            //TODO: check if prefix is --
-            //TODO: else use as filename
             currentArg++;
         }
         //TODO: print check
@@ -95,7 +96,7 @@ struct Options{
         cerr << "inputFilename: " << this->inputFilename << endl;
         cerr << "outputFilename: " << this->outputFilename << endl;
     }
-    bool compress;
+    bool compress=true;
     int subHeight=4;
     int subWidth=2;
     int huffmanEncodedDeltas=4;
@@ -268,6 +269,7 @@ int compress(Options mainOptions){
         writeToFile(encodedStream, codes, length, mainOptions.outputFilename);
     //writeToFile(encodedStream, codes, length, "output.rcr");
     //TODO: end
+    cerr << "done compressing, staring check" << endl;
     //Checking
     vector<ull> reencodedStream;
     vector<Code> recodes;
@@ -295,6 +297,11 @@ int compress(Options mainOptions){
     //TODO: check
 }
 int extract(Options mainOptions){
+    FILE* outputFile;
+    if(mainOptions.outputFilename == "")
+        outputFile = stdout;
+    else
+        outputFile = fopen(mainOptions.outputFilename.c_str(), "w");
     vector<ull> encodedStream;
     vector<Code> codes;
     ll length;
@@ -304,6 +311,7 @@ int extract(Options mainOptions){
     ll x = -1;
     ll y  = 0;
     ll newLines = 0;
+    map<ll, map<ll,bool> > mapIndices;
     for(int i = 0; i < decodedDeltas.size(); ++i){
         if(decodedDeltas[i] == -1){
             newLines++;
@@ -316,9 +324,16 @@ int extract(Options mainOptions){
             leastSignificant = (mostSignificant + y % mainOptions.subHeight) % mainOptions.subHeight;
             mostSignificant = (mostSignificant + y % mainOptions.subHeight) / mainOptions.subHeight;
             //TODO: finish
+            y = (y / mainOptions.subHeight) * mainOptions.subHeight + leastSignificant;
+            x += mostSignificant * mainOptions.subWidth;
+            mapIndices[y][x] = true;
         }
-
     }
+    fprintf(outputFile, "\%\%MatrixMarket matrix coordinate pattern general\n");
+    for(auto it1 = mapIndices.begin(); it1 != mapIndices.end(); ++it1)
+        for(auto it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
+            fprintf(outputFile, "%lld %lld", it1->first, it2->first);
+
 }
 
 struct reverseCmp {
