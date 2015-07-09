@@ -1,5 +1,8 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o rcr
+all : spm smac spMatrixHelp.o rcr patternize
+
+patternize: patternize.cpp
+	g++ -O3 -std=c++11 -o patternize patternize.cpp
 
 mcv.o : mcv.cpp
 	g++ -O3 -c mcv.cpp
@@ -27,6 +30,10 @@ test: testRcr testSmallQcd
 
 testRcr: rcr
 	rcr -c --subheight=4 example.mtx example.rcr
+	echo "part 2:"
+	rcr -x --subheight=4 example.rcr exampleProcessed.mtx
+	echo "check:"
+	diff example.mtx exampleProcessed.mtx
 
 testCant:
 	rcr < benchmark/cant.mtx > cant.rcr

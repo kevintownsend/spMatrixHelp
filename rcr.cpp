@@ -30,27 +30,6 @@ struct Node{
     Code code;
 };
 
-bool compare(Node left, Node right){
-    return left.frequency < right.frequency;
-}
-
-vector<Code> createCodes(vector<ll> &distribution);
-ull BitsToInt(vector<bool> bits);
-vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
-bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename);
-bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, FILE* output);
-bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
-bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
-
-int Log2(int n){
-    int ret = 0;
-    while(n){
-        ret++;
-        n>>=1;
-    }
-    return ret-1;
-}
-
 struct Options{
     Options(int argc, char* argv[]){
         cerr << "hello world" << endl;
@@ -102,7 +81,32 @@ struct Options{
     int huffmanEncodedDeltas=4;
     string inputFilename="";
     string outputFilename="";
+    int N;
+    int M;
+    int nnz;
 };
+
+bool compare(Node left, Node right){
+    return left.frequency < right.frequency;
+}
+
+vector<Code> createCodes(vector<ll> &distribution);
+ull BitsToInt(vector<bool> bits);
+vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, string filename);
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, FILE* output);
+bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
+bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
+
+int Log2(int n){
+    int ret = 0;
+    while(n){
+        ret++;
+        n>>=1;
+    }
+    return ret-1;
+}
+
 
 int compress(Options mainOptions);
 int extract(Options mainOptions);
@@ -127,6 +131,9 @@ int compress(Options mainOptions){
         pattern = false;
     int M, N, nnz;
     scanf("%d %d %d", &M, &N, &nnz);
+    mainOptions.M = M;
+    mainOptions.N = N;
+    mainOptions.nnz = nnz;
     //TODO: sub row sub col
     int subRow=mainOptions.subHeight;
     int subCol=mainOptions.subWidth;
@@ -264,9 +271,9 @@ int compress(Options mainOptions){
     FILE* tmp;
     //freopen(tmp, "w", stdout);
     if(mainOptions.outputFilename == "")
-        writeToFile(encodedStream, codes, length, stdout);
+        writeToFile(mainOptions, encodedStream, codes, length, stdout);
     else
-        writeToFile(encodedStream, codes, length, mainOptions.outputFilename);
+        writeToFile(mainOptions, encodedStream, codes, length, mainOptions.outputFilename);
     //writeToFile(encodedStream, codes, length, "output.rcr");
     //TODO: end
     cerr << "done compressing, staring check" << endl;
@@ -275,7 +282,7 @@ int compress(Options mainOptions){
     vector<Code> recodes;
     ll relength;
     //TODO: fix
-    readFromFile(reencodedStream, recodes, relength, mainOptions.outputFilename);
+    readFromFile(mainOptions, reencodedStream, recodes, relength, mainOptions.outputFilename);
     if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
         cerr << "check failed" << endl;
     }
@@ -295,6 +302,7 @@ int compress(Options mainOptions){
     }
     //TODO: deltas to indices
     //TODO: check
+    return 0;
 }
 int extract(Options mainOptions){
     FILE* outputFile;
@@ -305,7 +313,7 @@ int extract(Options mainOptions){
     vector<ull> encodedStream;
     vector<Code> codes;
     ll length;
-    readFromFile(encodedStream, codes, length, mainOptions.inputFilename);
+    readFromFile(mainOptions, encodedStream, codes, length, mainOptions.inputFilename);
     vector<ll> decodedDeltas = decode(encodedStream, codes, length);
     //TODO:turn deltas into indices
     ll x = -1;
@@ -329,11 +337,13 @@ int extract(Options mainOptions){
             mapIndices[y][x] = true;
         }
     }
-    fprintf(outputFile, "\%\%MatrixMarket matrix coordinate pattern general\n");
+    fprintf(outputFile, "%%%%MatrixMarket matrix coordinate pattern general\n");
+    fprintf(outputFile, "%lld %lld %lld\n", mainOptions.M, mainOptions.N, mainOptions.nnz);
     for(auto it1 = mapIndices.begin(); it1 != mapIndices.end(); ++it1)
         for(auto it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-            fprintf(outputFile, "%lld %lld", it1->first, it2->first);
+            fprintf(outputFile, "%lld %lld\n", it1->first+1, it2->first+1);
 
+    return 0;
 }
 
 struct reverseCmp {
@@ -347,16 +357,30 @@ struct reverseCmp {
         return false;
     }
 };
-bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, string filename){
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, string filename){
     FILE* output = fopen(filename.c_str(),"w");
-    return writeToFile(stream, codes, length, output);
+    return writeToFile(mainOptions, stream, codes, length, output);
 }
     //TODO: print rcr file
     //number of codes
-bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, FILE* output){
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, FILE* output){
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
     cerr << "output codes size: " << (*printerPtr) << endl;
+    tmp = mainOptions.M;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i)
+        fprintf(output, "%c", printerPtr[i]);
+    tmp = mainOptions.N;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i)
+        fprintf(output, "%c", printerPtr[i]);
+    tmp = mainOptions.nnz;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i)
+        fprintf(output, "%c", printerPtr[i]);
+    tmp = codes.size();
+    printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fprintf(output, "%c", printerPtr[i]);
     }
@@ -392,11 +416,32 @@ bool writeToFile(vector<ull> stream, vector<Code> codes, ll length, FILE* output
     fclose(output);
     return true;
 }
-bool readFromFile(vector<ull> &stream, vector<Code> &codes, ll &length, string filename){
+bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes, ll &length, string filename){
     FILE* input = fopen(filename.c_str(), "r");
     ull codesSize;
     ull tmp;
     char* printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        cerr << ((int)*printerPtr) << endl;
+        printerPtr++;
+    }
+    mainOptions.M = tmp;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        cerr << ((int)*printerPtr) << endl;
+        printerPtr++;
+    }
+    mainOptions.N = tmp;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        cerr << ((int)*printerPtr) << endl;
+        printerPtr++;
+    }
+    mainOptions.nnz = tmp;
+    printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
         cerr << ((int)*printerPtr) << endl;
