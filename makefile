@@ -1,6 +1,12 @@
 prefix=$(HOME)
 all : spm smac spMatrixHelp.o rcr patternize
 
+benchmark:
+	mkdir benchmark
+	wget http://www.nvidia.com/content/NV_Research/matrices.zip
+	unzip matrices.zip benchmark/.
+	cp example.mtx benchmark/.
+
 run :
 	rcrScript
 
