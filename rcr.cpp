@@ -276,6 +276,7 @@ int compress(Options mainOptions){
         writeToFile(mainOptions, encodedStream, codes, length, mainOptions.outputFilename);
     //writeToFile(encodedStream, codes, length, "output.rcr");
     //TODO: end
+    //return 0;
     cerr << "done compressing, staring check" << endl;
     //Checking
     vector<ull> reencodedStream;

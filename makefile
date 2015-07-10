@@ -1,6 +1,9 @@
 prefix=$(HOME)
 all : spm smac spMatrixHelp.o rcr patternize
 
+run :
+	rcrScript
+
 patternize: patternize.cpp
 	g++ -O3 -std=c++11 -o patternize patternize.cpp
 

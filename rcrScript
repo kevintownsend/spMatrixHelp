@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+echo "hello world"
+#TODO: add example to front
+#TODO: list of matrices
+matrixPaths=$(ls ./benchmark/*.mtx)
+matrices=""
+for m in ${matrixPaths}; do
+    matrix=${m#./benchmark/}
+    matrix=${matrix%.mtx}
+    matrices="${matrices} ${matrix}"
+done
+matrices="example ${matrices}"
+rm -rf tmp
+mkdir tmp
+max=4
+i=0
+rm data.csv
+echo -n "nnz" >> data.csv
+for m in ${matrices}; do
+    echo "Patternizing ${m}"
+    if [[ ${i} -eq ${max} ]]; then
+        break
+    fi
+    patternize < ./benchmark/${m}.mtx > ./tmp/${m}Pattern.mtx
+    rcr -c ./tmp/${m}Pattern.mtx ./tmp/${m}.rcr
+    echo "extracting"
+    rcr -x ./tmp/${m}.rcr ./tmp/${m}Check.mtx
+    diff ./tmp/${m}Pattern.mtx ./tmp/${m}Check.mtx
+    #TODO: compression ratio
+    j=0
+    while read -r line; do
+        echo $line
+        if [[ $j -eq 2 ]]; then
+            break
+        fi
+        if [[ $j -eq 1 ]]; then
+            length=$(echo $line | sed "s/^.* //")
+        fi
+        let j=$j+1
+    done < "./tmp/${m}Pattern.mtx"
+    echo "here"
+    echo -n ", ${length}" >> data.csv
+    let i=$1+1
+    break
+done
+echo "" >> data.csv
+echo -n "default" >> data.csv
+for m in ${matrices}; do
+    echo -n ", $(stat -c%s ./tmp/${m}.rcr)" >> data.csv
+    break
+done
+#TODO: print average
+
+#TODO: dual for loop
