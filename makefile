@@ -7,7 +7,7 @@ benchmark:
 	unzip matrices.zip -d benchmark/.
 	cp example.mtx benchmark/.
 
-run : benchmark
+run : benchmark patternize rcr
 	rcrScript
 
 patternize: patternize.cpp
