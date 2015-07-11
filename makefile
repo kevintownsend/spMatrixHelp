@@ -4,10 +4,10 @@ all : spm smac spMatrixHelp.o rcr patternize
 benchmark:
 	mkdir benchmark
 	wget http://www.nvidia.com/content/NV_Research/matrices.zip
-	unzip matrices.zip benchmark/.
+	unzip matrices.zip -d benchmark/.
 	cp example.mtx benchmark/.
 
-run :
+run : benchmark
 	rcrScript
 
 patternize: patternize.cpp
