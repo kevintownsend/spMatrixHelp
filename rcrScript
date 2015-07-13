@@ -15,6 +15,10 @@ mkdir tmp
 max=4
 i=0
 rm data.csv
+echo -n "matrices" >> data.csv
+for m in ${matrices}; do
+    echo ", $m" >> data.csv
+done
 echo -n "nnz" >> data.csv
 for m in ${matrices}; do
     echo "Patternizing ${m}"
@@ -38,10 +42,8 @@ for m in ${matrices}; do
         fi
         let j=$j+1
     done < "./tmp/${m}Pattern.mtx"
-    echo "here"
     echo -n ", ${length}" >> data.csv
     let i=$1+1
-    break
 done
 echo "" >> data.csv
 echo -n "default" >> data.csv
