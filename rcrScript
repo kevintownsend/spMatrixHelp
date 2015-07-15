@@ -26,14 +26,18 @@ for m in ${matrices}; do
         break
     fi
     patternize < ./benchmark/${m}.mtx > ./tmp/${m}Pattern.mtx
-    ret=$(rcr -c ./tmp/${m}Pattern.mtx ./tmp/${m}.rcr)
-    if ${ret}; then
+    rcr -c ./tmp/${m}Pattern.mtx ./tmp/${m}.rcr
+    echo "return code: $?"
+    if [[ ${ret} -ne 0 ]]; then
         break
     fi
 
     echo "extracting"
     rcr -x ./tmp/${m}.rcr ./tmp/${m}Check.mtx
     diff ./tmp/${m}Pattern.mtx ./tmp/${m}Check.mtx > ${m}Diff
+    if [[ $(wc -l) -gt 1 ]]; then
+        break
+    fi
     #TODO: compression ratio
     j=0
     while read -r line; do
