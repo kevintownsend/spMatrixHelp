@@ -35,7 +35,7 @@ for m in ${matrices}; do
     echo "extracting"
     rcr -x ./tmp/${m}.rcr ./tmp/${m}Check.mtx
     diff ./tmp/${m}Pattern.mtx ./tmp/${m}Check.mtx > ${m}Diff
-    if [[ $(wc -l) -gt 1 ]]; then
+    if [[ $(wc -l < ${m}Diff) -gt 4 ]]; then
         break
     fi
     #TODO: compression ratio

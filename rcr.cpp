@@ -155,6 +155,7 @@ int compress(Options mainOptions){
         col.push_back(tmp2-1);
     }
     //rcr 42
+    cerr << "creating matrix map\n";
     map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
         matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
@@ -162,6 +163,7 @@ int compress(Options mainOptions){
     vector<ll> deltas;
     ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
+    cerr << "\n";
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
         //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i)
@@ -187,6 +189,7 @@ int compress(Options mainOptions){
     vector<ll> distribution;
     int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
     distribution.resize(huffmanCodesSize);
+    cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
             distribution[huffmanCodesSize-2]++;
@@ -197,6 +200,7 @@ int compress(Options mainOptions){
     }
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
+    cerr << "creating codeMap\n";
     for(int i = 0; i < codes.size(); ++i){
         if(codes[i].delta == huffmanCodesSize-2){
             codes[i].delta = -1;
@@ -207,6 +211,7 @@ int compress(Options mainOptions){
     vector<ull> encodedStream;
     ll currBit = 0;
     ll latest = 0;
+    cerr << "encoding deltas\n";
     for(ll i = 0; i < deltas.size(); ++i){
         int delta = deltas[i];
         if(delta >= huffmanCodesSize-2)
