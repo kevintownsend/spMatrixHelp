@@ -207,8 +207,8 @@ int compress(Options mainOptions){
         if(codes[i].delta == huffmanCodesSize-2){
             codes[i].delta = -1;
             codeMap[-1] = codes[i];
-    }else
-        codeMap[codes[i].delta] = codes[i];
+        }else
+            codeMap[codes[i].delta] = codes[i];
     }
     vector<ull> encodedStream;
     ll currBit = 0;
