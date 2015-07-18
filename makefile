@@ -8,7 +8,7 @@ benchmark:
 	cp example.mtx benchmark/.
 
 run : benchmark patternize rcr
-	rcrScript
+	rcrScript.py
 
 patternize: patternize.cpp
 	g++ -O3 -std=c++11 -o patternize patternize.cpp

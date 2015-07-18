@@ -41,10 +41,12 @@ struct Options{
             string arg(argv[currentArg]);
             cerr << "processing arg: " << arg << endl;
             if(arg.substr(0,2) == "--"){
-                if(arg.find("subheight"))
+                if(arg.find("subheight") != string::npos)
                     this->subHeight = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
-                else if(arg.find("subwidth"))
+                else if(arg.find("subwidth") != string::npos)
                     this->subWidth = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
+                else if(arg.find("huffmandepth") != string::npos)
+                    this->huffmanEncodedDeltas = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
                 cerr << "woot woot:" << this->subHeight << endl;
 
             }
@@ -637,13 +639,13 @@ vector<Code> createCodes(vector<ll> &distribution){
                 break;
         }
     }
-//    cerr << "codes: " << codes.size() << endl;
-//    for(int i = 0; i < codes.size(); ++i){
-//        cerr << "index: " << i << ":\n";
-//        cerr << "encode: " << codes[i].encode << endl;
-//        cerr << "encode length: " << codes[i].encode_length << endl;
-//        cerr << "delta: " << codes[i].delta << endl;
-//    }
+    cerr << "codes: " << codes.size() << endl;
+    for(int i = 0; i < codes.size(); ++i){
+        cerr << "index: " << i << ":\n";
+        cerr << "encode: " << codes[i].encode << endl;
+        cerr << "encode length: " << codes[i].encode_length << endl;
+        cerr << "delta: " << codes[i].delta << endl;
+    }
     return codes;
 }
 
