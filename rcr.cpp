@@ -17,10 +17,21 @@ using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
 char buffer[200];
+
+enum CodeType{NEWLINE, CONSTANT, RANGE};
 struct Code{
+    CodeType ct;
+    ull delta;
     ull encode;
     int encode_length;
-    ull delta;
+    Code(CodeType ct, ull delta){
+        this->ct = ct;
+        this->delta = delta;
+    }
+
+    bool operator<(const Code& rhs) const{
+        return tie(this->ct, this->delta) < tie(rhs.ct, rhs.delta)
+    }
 };
 
 struct Node{
@@ -99,6 +110,14 @@ bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll
 bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, FILE* output);
 bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
+int Log2(ull n){
+    int ret = 0;
+    while(n){
+        ret++;
+        n>>=1;
+    }
+    return ret-1;
+}
 
 int Log2(int n){
     int ret = 0;
@@ -124,7 +143,6 @@ int main(int argc, char* argv[]){
 int compress(Options mainOptions){
     if(mainOptions.inputFilename != "")
         freopen(mainOptions.inputFilename.c_str(), "r", stdin);
-    //TODO: if compressing or extracting
     scanf("%[^\n]", buffer);
     cerr << buffer << endl;
     string matrixCode;
@@ -188,36 +206,31 @@ int compress(Options mainOptions){
         delta = 0;
         p2=0; p3=0; p4=0;
     }
-    vector<ll> distribution;
+    map<ll, ll> distribution;
     int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
-    distribution.resize(huffmanCodesSize);
     cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
-            distribution[huffmanCodesSize-2]++;
+            distribution[-1]++;
         else if(deltas[i] < huffmanCodesSize-2)
             distribution[deltas[i]]++;
         else
-            distribution[huffmanCodesSize-1]++;
+            distribution[-Log2(deltas[i])]++;
     }
     vector<Code> codes = createCodes(distribution);
     map<ll, Code> codeMap;
     cerr << "creating codeMap\n";
     for(int i = 0; i < codes.size(); ++i){
-        if(codes[i].delta == huffmanCodesSize-2){
-            codes[i].delta = -1;
-            codeMap[-1] = codes[i];
-        }else
-            codeMap[codes[i].delta] = codes[i];
+        codeMap[codes[i].delta] = codes[i];
     }
     vector<ull> encodedStream;
     ll currBit = 0;
     ll latest = 0;
     cerr << "encoding deltas\n";
     for(ll i = 0; i < deltas.size(); ++i){
-        int delta = deltas[i];
+        ll delta = deltas[i];
         if(delta >= huffmanCodesSize-2)
-            delta = huffmanCodesSize-1;
+            delta = -Log2(delta);
         latest |= codeMap[delta].encode << currBit;
         if(currBit + codeMap[delta].encode_length == 64){
             encodedStream.push_back(latest);
@@ -573,13 +586,13 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
     return decoded;
 }
 
-vector<Code> createCodes(vector<ll> &distribution){
+vector<Code> createCodes(map<ll, ll> &distribution){
     vector<Code> codes;
     vector<Node> tree;
-    for(int i = 0; i < distribution.size(); ++i){
+    for(auto it = distribution.begin(); it != distribution.end(); ++it){
         Node tmp;
-        tmp.frequency = distribution[i];
-        tmp.code.delta = i;
+        tmp.frequency = it->second;
+        tmp.code.delta = it->first;
         tree.push_back(tmp);
     }
     for(int i = 0; i < tree.size()-1; i += 2){
@@ -595,7 +608,7 @@ vector<Code> createCodes(vector<ll> &distribution){
 //        cerr << tree[i].frequency << endl;
 //    }
 
-    //TODO: create codes
+    //create codes
     vector<bool> path;
     vector<int> parentStack;
     vector<int> phase;

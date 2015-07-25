@@ -5,8 +5,9 @@ import os
 import sys
 from math import *
 
-optimalWidth = 8
-optimalHeight = 128
+ResultsFile = open("Results", "w")
+optimalWidth = -1
+optimalHeight = -1
 matrixPaths = glob("./benchmark/*.mtx")
 matrices = []
 for m in matrixPaths:
@@ -64,6 +65,8 @@ if(optimalWidth == -1):
                 minJ = 2**j
 
     print("subWidth: " + repr(minI) + " subHeight: " + repr(minJ) + " ratio: " + repr(minV))
+    ResultsFile.write("subWidth: " + repr(minI) + " subHeight: " + repr(minJ) + " ratio: " + repr(minV) + "\n")
+    ResultsFile.write(repr(averages) + "\n")
 
 results = []
 for i in range(len(matrices)):
@@ -81,5 +84,10 @@ for i in range(10):
     averages.append(total / len(matrices))
 print("results: " + repr(results))
 print("averages: " + repr(averages))
+ResultsFile.write("Huffman Analysis\n")
+ResultsFile.write("results: " + repr(results) + "\n")
+ResultsFile.write("averages: " + repr(averages) + "\n")
+print("optimal: " + repr(optimalWidth) + " " + repr(optimalHeight))
 print("bye crule world")
 sys.exit(0)
+
