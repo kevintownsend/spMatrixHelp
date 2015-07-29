@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cstring>
 #include <cstdlib>
+#include <math.h>
 
 //TODO: newlines
 //TODO: support very large deltas
@@ -18,19 +19,24 @@ typedef long long ll;
 typedef unsigned long long ull;
 char buffer[200];
 
-enum CodeType{NEWLINE, CONSTANT, RANGE};
+enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
 struct Code{
     CodeType ct;
     ull delta;
     ull encode;
     int encode_length;
+    Code(){}
     Code(CodeType ct, ull delta){
         this->ct = ct;
         this->delta = delta;
     }
 
     bool operator<(const Code& rhs) const{
-        return tie(this->ct, this->delta) < tie(rhs.ct, rhs.delta)
+        return tie(this->ct, this->delta) < tie(rhs.ct, rhs.delta);
+    }
+
+    bool operator==(const Code& rhs) const{
+        return (this->ct == rhs.ct) && (this->delta == rhs.delta);
     }
 };
 
@@ -103,31 +109,13 @@ bool compare(Node left, Node right){
     return left.frequency < right.frequency;
 }
 
-vector<Code> createCodes(vector<ll> &distribution);
+vector<Code> createCodes(map<Code, ll> &distribution);
 ull BitsToInt(vector<bool> bits);
-vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length);
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, string filename);
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, FILE* output);
-bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes, ll &length, string filename);
+vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength);
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, string filename);
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, FILE* output);
+bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll &length, ll &argumentLength, string filename);
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
-int Log2(ull n){
-    int ret = 0;
-    while(n){
-        ret++;
-        n>>=1;
-    }
-    return ret-1;
-}
-
-int Log2(int n){
-    int ret = 0;
-    while(n){
-        ret++;
-        n>>=1;
-    }
-    return ret-1;
-}
-
 
 int compress(Options mainOptions);
 int extract(Options mainOptions);
@@ -206,109 +194,116 @@ int compress(Options mainOptions){
         delta = 0;
         p2=0; p3=0; p4=0;
     }
-    map<ll, ll> distribution;
+    map<Code, ll> distribution;
     int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
     cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
-            distribution[-1]++;
+            distribution[Code(NEWLINE, 0)]++;
         else if(deltas[i] < huffmanCodesSize-2)
-            distribution[deltas[i]]++;
+            distribution[Code(CONSTANT,deltas[i])]++;
         else
-            distribution[-Log2(deltas[i])]++;
+            distribution[Code(RANGE,(ll)log2(deltas[i]))]++;
     }
     vector<Code> codes = createCodes(distribution);
-    map<ll, Code> codeMap;
+    map<Code, Code> codeMap;
     cerr << "creating codeMap\n";
     for(int i = 0; i < codes.size(); ++i){
-        codeMap[codes[i].delta] = codes[i];
+        codeMap[codes[i]] = codes[i];
     }
     vector<ull> encodedStream;
-    ll currBit = 0;
-    ll latest = 0;
+    vector<ull> argumentStream;
+    ll encodedCurrBit = 0;
+    ll encodedLatest = 0;
+    ll argumentCurrBit = 0;
+    ll argumentLatest = 0;
     cerr << "encoding deltas\n";
     for(ll i = 0; i < deltas.size(); ++i){
         ll delta = deltas[i];
-        if(delta >= huffmanCodesSize-2)
-            delta = -Log2(delta);
-        latest |= codeMap[delta].encode << currBit;
-        if(currBit + codeMap[delta].encode_length == 64){
-            encodedStream.push_back(latest);
-            latest = 0;
-            currBit = 0;
-        }else if(currBit + codeMap[delta].encode_length > 64){
-            encodedStream.push_back(latest);
-            latest = codeMap[delta].encode >> (64-currBit);
-            currBit = (currBit + codeMap[delta].encode_length) % 64;
+        Code deltaCode;
+        ll deltaArgument = 0;
+        if(delta == -1)
+            deltaCode = Code(NEWLINE, 0);
+        else if(delta >= huffmanCodesSize - 2)
+            deltaCode = Code(RANGE, (ll)log2(delta));
+        else
+            deltaCode = Code(CONSTANT, delta);
+        encodedLatest |= codeMap[deltaCode].encode << encodedCurrBit;
+        if(encodedCurrBit + codeMap[deltaCode].encode_length == 64){
+            encodedStream.push_back(encodedLatest);
+            encodedLatest = 0;
+            encodedCurrBit = 0;
+        }else if(encodedCurrBit + codeMap[deltaCode].encode_length > 64){
+            encodedStream.push_back(encodedLatest);
+            encodedLatest = codeMap[deltaCode].encode >> (64-encodedCurrBit);
+            encodedCurrBit = (encodedCurrBit + codeMap[deltaCode].encode_length) % 64;
         }else{
-            currBit = currBit + codeMap[delta].encode_length;
+            encodedCurrBit = encodedCurrBit + codeMap[deltaCode].encode_length;
         }
-        //TODO: gamma code
-        if(delta == huffmanCodesSize-1){
-            int zerosNeeded = Log2(deltas[i]) - Log2(huffmanCodesSize-2);
-            if(currBit + zerosNeeded >= 64){
-                encodedStream.push_back(latest);
-                latest=0;
-            }
-            currBit = (currBit + zerosNeeded) % 64;
-            latest |= 1ULL << currBit;
-            currBit++;
-            if(currBit == 64){
-                encodedStream.push_back(latest);
-                latest=0;
-                currBit = 0;
-            }
-            ull delta = deltas[i] & ~(1ULL << (Log2(deltas[i])));
-            latest |= delta << currBit;
-            int width = Log2(deltas[i]);
-            if(currBit + width == 64){
-                encodedStream.push_back(latest);
-                latest = 0;
-                currBit = 0;
-            }else if(currBit + width > 64){
-                encodedStream.push_back(latest);
-                latest = delta >> (64-currBit);
-                currBit = (currBit + width) % 64;
+        //Argument
+        if(deltaCode.ct == RANGE){
+            ull delta = deltas[i] & ~(1ULL << ((ull)log2(deltas[i])));
+            argumentLatest |= delta << argumentCurrBit;
+            int width = (int)log2(deltas[i]);
+            if(argumentCurrBit + width == 64){
+                argumentStream.push_back(argumentLatest);
+                argumentLatest = 0;
+                argumentCurrBit = 0;
+            }else if(argumentCurrBit + width > 64){
+                argumentStream.push_back(argumentLatest);
+                argumentLatest = delta >> (64-argumentCurrBit);
+                argumentCurrBit = (argumentCurrBit + width) % 64;
             }else{
-                currBit += width;
+                argumentCurrBit += width;
             }
-            //TODO: bits except first
         }
     }
-    if(currBit != 0)
-        encodedStream.push_back(latest);
+    if(encodedCurrBit != 0)
+        encodedStream.push_back(encodedLatest);
+    if(argumentCurrBit != 0)
+        argumentStream.push_back(argumentLatest);
     cerr << "Size (bytes): " << (encodedStream.size()*8) << endl;
     cerr << "Bits per index: " << (encodedStream.size()*64.0/deltas.size()) << endl;
     double averageBits = (encodedStream.size()*64.0/deltas.size());
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
     //decoding
-    int length = currBit;
-    if(currBit == 0)
+    int length = encodedCurrBit;
+    if(encodedCurrBit == 0)
         length += 64*encodedStream.size();
     else
         length += 64*(encodedStream.size() - 1);
+    int argumentLength = argumentCurrBit;
+    if(argumentCurrBit == 0)
+        argumentLength += 64*argumentStream.size();
+    else
+        argumentLength += 64*argumentStream.size();
     FILE* tmp;
     //freopen(tmp, "w", stdout);
     if(mainOptions.outputFilename == "")
-        writeToFile(mainOptions, encodedStream, codes, length, stdout);
+        writeToFile(mainOptions, encodedStream, argumentStream, codes, length, argumentLength, stdout);
     else
-        writeToFile(mainOptions, encodedStream, codes, length, mainOptions.outputFilename);
+        writeToFile(mainOptions, encodedStream, argumentStream, codes, length, argumentLength, mainOptions.outputFilename);
     //writeToFile(encodedStream, codes, length, "output.rcr");
     //TODO: end
     //return 0;
     cerr << "done compressing, staring check" << endl;
     //Checking
     vector<ull> reencodedStream;
+    vector<ull> reencodedArgumentStream;
     vector<Code> recodes;
     ll relength;
+    ll reArgumentLength;
     //TODO: fix
-    readFromFile(mainOptions, reencodedStream, recodes, relength, mainOptions.outputFilename);
+    readFromFile(mainOptions, reencodedStream, reencodedArgumentStream, recodes, relength, reArgumentLength, mainOptions.outputFilename);
+    cerr << "done reading" << endl;
     if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
         cerr << "check failed" << endl;
     }
-    vector<ll> decodedDeltas = decode(encodedStream, codes, length);
-    if(false){
+    cerr << "decoding" << endl;
+    vector<ll> decodedDeltas = decode(encodedStream, argumentStream, codes, length, argumentLength);
+    cerr << "checking" << endl;
+    if(true){
         for(int i = 0; i < decodedDeltas.size(); ++i){
             cerr << dec << decodedDeltas[i] << " ";
             if(decodedDeltas[i] != deltas[i]){
@@ -332,10 +327,12 @@ int extract(Options mainOptions){
     else
         outputFile = fopen(mainOptions.outputFilename.c_str(), "w");
     vector<ull> encodedStream;
+    vector<ull> encodedArgumentStream;
     vector<Code> codes;
     ll length;
-    readFromFile(mainOptions, encodedStream, codes, length, mainOptions.inputFilename);
-    vector<ll> decodedDeltas = decode(encodedStream, codes, length);
+    ll argumentLength;
+    readFromFile(mainOptions, encodedStream, encodedArgumentStream, codes, length, argumentLength, mainOptions.inputFilename);
+    vector<ll> decodedDeltas = decode(encodedStream, encodedArgumentStream, codes, length, argumentLength);
     //TODO:turn deltas into indices
     ll x = -1;
     ll y  = 0;
@@ -378,13 +375,13 @@ struct reverseCmp {
         return false;
     }
 };
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, string filename){
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, string filename){
     FILE* output = fopen(filename.c_str(),"w");
-    return writeToFile(mainOptions, stream, codes, length, output);
+    return writeToFile(mainOptions, stream, argumentStream, codes, length, argumentLength, output);
 }
     //TODO: print rcr file
     //number of codes
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll length, FILE* output){
+bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, FILE* output){
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
     cerr << "output codes size: " << (*printerPtr) << endl;
@@ -406,6 +403,11 @@ bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll
         fprintf(output, "%c", printerPtr[i]);
     }
     for(int i = 0; i < codes.size(); ++i){
+        //TODO: print code type
+        tmp = codes[i].ct;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fprintf(output, "%c", printerPtr[j]);
         tmp = codes[i].encode;
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
@@ -434,10 +436,23 @@ bool writeToFile(Options mainOptions, vector<ull> stream, vector<Code> codes, ll
         }
     }
     //stream
+    //TODO: argument stream
+    tmp = argumentLength;
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fprintf(output, "%c", printerPtr[i]);
+    }
+    for(int i = 0; i < argumentStream.size(); ++i){
+        tmp = argumentStream[i];
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j){
+            fprintf(output, "%c", printerPtr[j]);
+        }
+    }
     fclose(output);
     return true;
 }
-bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes, ll &length, string filename){
+bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll &length, ll &argumentLength, string filename){
     FILE* input = fopen(filename.c_str(), "r");
     ull codesSize;
     ull tmp;
@@ -475,6 +490,10 @@ bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
             fscanf(input, "%c", printerPtr++);
+        tmpCode.ct = (CodeType)tmp;
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j)
+            fscanf(input, "%c", printerPtr++);
         tmpCode.encode = tmp;
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
@@ -499,6 +518,21 @@ bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<Code> &codes
             printerPtr++;
         }
         stream.push_back(tmp);
+    }
+
+    printerPtr = (char*)&tmp;
+    for(int i = 0; i < 8; ++i){
+        fscanf(input, "%c", printerPtr);
+        printerPtr++;
+    }
+    argumentLength = tmp;
+    for(int i = 0; i < ((argumentLength - 1)/64 + 1); ++i){
+        printerPtr = (char*)&tmp;
+        for(int j = 0; j < 8; ++j){
+            fscanf(input, "%c", printerPtr);
+            printerPtr++;
+        }
+        argumentStream.push_back(tmp);
     }
 
     fclose(input);
@@ -527,9 +561,11 @@ bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> 
     return true;
 }
 
-vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
+vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength){
     int currBit = 0;
+    ull argumentCurrBit = 0;
     vector<ll> decoded;
+    cerr << "here: " << argumentStream.size() << endl;
     map<ull, Code, reverseCmp> codesMap;
     for(int i = 0; i < codes.size(); ++i){
         codesMap[codes[i].encode] = codes[i];
@@ -542,6 +578,7 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
 //        cerr << dec << "delta: " << it->second.delta << endl;
 //    }
     while(currBit < length) {
+        cerr << "currBit: " << currBit << " / " << length << endl;
         ull latest = stream[currBit/64] >> (currBit % 64);
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
             latest |= stream[currBit/64+1] << (64 - currBit % 64);
@@ -558,19 +595,15 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
         //cerr << "delta: " << it->second.delta << endl;
         currBit += tmp.encode_length;
         //TODO: decode gamma code
-        if(tmp.delta == codes.size() - 1){
-            latest = stream[currBit/64] >> (currBit % 64);
-            if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
-                latest |= stream[currBit/64+1] << (64 - currBit % 64);
-            int width = 0;
-            while(!(latest & 1)){
-                currBit++;
-                latest >>= 1;
-                width++;
-            }
-            width += Log2(codes.size()-2);
-            currBit++;
-            latest >>= 1;
+        if(tmp.ct == NEWLINE){
+            cerr << "ct=newline" << endl;
+            decoded.push_back(-1);
+        }else if(tmp.ct == RANGE){
+            cerr << "ct=range" << endl;
+            latest = argumentStream[argumentCurrBit/64] >> (argumentCurrBit % 64);
+            if(argumentCurrBit/64 + 1 < argumentStream.size() && (argumentCurrBit % 64) != 0)
+                latest |= argumentStream[argumentCurrBit/64+1] << (64 - argumentCurrBit % 64);
+            int width = tmp.delta;
             ull mask = -1;
             if(width != 0)
                 mask >>= (64-width);
@@ -578,21 +611,22 @@ vector<ll> decode(vector<ull> stream, vector<Code> codes, ll length){
                 mask = 0;
             ll delta = (latest & mask) | (1LL << width);
             decoded.push_back(delta);
-            currBit += width;
+            argumentCurrBit += width;
         }else{
+            cerr << "ct=constant" << endl;
             decoded.push_back(tmp.delta);
         }
     }
     return decoded;
 }
 
-vector<Code> createCodes(map<ll, ll> &distribution){
+vector<Code> createCodes(map<Code, ll> &distribution){
     vector<Code> codes;
     vector<Node> tree;
     for(auto it = distribution.begin(); it != distribution.end(); ++it){
         Node tmp;
         tmp.frequency = it->second;
-        tmp.code.delta = it->first;
+        tmp.code = it->first;
         tree.push_back(tmp);
     }
     for(int i = 0; i < tree.size()-1; i += 2){
@@ -657,6 +691,7 @@ vector<Code> createCodes(map<ll, ll> &distribution){
         cerr << "index: " << i << ":\n";
         cerr << "encode: " << codes[i].encode << endl;
         cerr << "encode length: " << codes[i].encode_length << endl;
+        cerr << "code type: " << codes[i].ct << endl;
         cerr << "delta: " << codes[i].delta << endl;
     }
     return codes;
