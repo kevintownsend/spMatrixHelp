@@ -112,8 +112,8 @@ bool compare(Node left, Node right){
 vector<Code> createCodes(map<Code, ll> &distribution);
 ull BitsToInt(vector<bool> bits);
 vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength);
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, string filename);
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, FILE* output);
+bool writeToFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll length, ll argumentLength, string filename);
+bool writeToFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll length, ll argumentLength, FILE* output);
 bool readFromFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll &length, ll &argumentLength, string filename);
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<Code> &codesOld, vector<Code> &codesNew);
 
@@ -303,7 +303,7 @@ int compress(Options mainOptions){
     cerr << "decoding" << endl;
     vector<ll> decodedDeltas = decode(encodedStream, argumentStream, codes, length, argumentLength);
     cerr << "checking" << endl;
-    if(true){
+    if(false){
         for(int i = 0; i < decodedDeltas.size(); ++i){
             cerr << dec << decodedDeltas[i] << " ";
             if(decodedDeltas[i] != deltas[i]){
@@ -375,13 +375,13 @@ struct reverseCmp {
         return false;
     }
 };
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, string filename){
+bool writeToFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll length, ll argumentLength, string filename){
     FILE* output = fopen(filename.c_str(),"w");
     return writeToFile(mainOptions, stream, argumentStream, codes, length, argumentLength, output);
 }
     //TODO: print rcr file
     //number of codes
-bool writeToFile(Options mainOptions, vector<ull> stream, vector<ull> argumentStream, vector<Code> codes, ll length, ll argumentLength, FILE* output){
+bool writeToFile(Options &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<Code> &codes, ll length, ll argumentLength, FILE* output){
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
     cerr << "output codes size: " << (*printerPtr) << endl;
@@ -565,7 +565,6 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> c
     int currBit = 0;
     ull argumentCurrBit = 0;
     vector<ll> decoded;
-    cerr << "here: " << argumentStream.size() << endl;
     map<ull, Code, reverseCmp> codesMap;
     for(int i = 0; i < codes.size(); ++i){
         codesMap[codes[i].encode] = codes[i];
@@ -578,7 +577,6 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> c
 //        cerr << dec << "delta: " << it->second.delta << endl;
 //    }
     while(currBit < length) {
-        cerr << "currBit: " << currBit << " / " << length << endl;
         ull latest = stream[currBit/64] >> (currBit % 64);
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
             latest |= stream[currBit/64+1] << (64 - currBit % 64);
@@ -596,10 +594,8 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> c
         currBit += tmp.encode_length;
         //TODO: decode gamma code
         if(tmp.ct == NEWLINE){
-            cerr << "ct=newline" << endl;
             decoded.push_back(-1);
         }else if(tmp.ct == RANGE){
-            cerr << "ct=range" << endl;
             latest = argumentStream[argumentCurrBit/64] >> (argumentCurrBit % 64);
             if(argumentCurrBit/64 + 1 < argumentStream.size() && (argumentCurrBit % 64) != 0)
                 latest |= argumentStream[argumentCurrBit/64+1] << (64 - argumentCurrBit % 64);
@@ -613,7 +609,6 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<Code> c
             decoded.push_back(delta);
             argumentCurrBit += width;
         }else{
-            cerr << "ct=constant" << endl;
             decoded.push_back(tmp.delta);
         }
     }

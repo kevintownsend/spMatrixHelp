@@ -38,9 +38,9 @@ rcr : rcr.cpp
 test: testRcr testSmallQcd
 
 testRcr: rcr
-	rcr -c --subheight=4 example.mtx example.rcr
+	time rcr -c --subheight=4 example.mtx example.rcr
 	echo "part 2:"
-	rcr -x --subheight=4 example.rcr exampleProcessed.mtx
+	time rcr -x --subheight=4 example.rcr exampleProcessed.mtx
 	echo "check:"
 	diff example.mtx exampleProcessed.mtx
 
