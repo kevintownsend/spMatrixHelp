@@ -30,6 +30,7 @@ module pattern_decoder_tb;
         rst = 1;
         push = 0;
         data = 0;
+        start_addr = 0;
         #101 rst = 0;
         #10 start = 1;
         #10 start = 0;
@@ -44,4 +45,5 @@ module pattern_decoder_tb;
             data <= memory[req_addr];
         end
     end
+    //TODO: print out indexes
 endmodule

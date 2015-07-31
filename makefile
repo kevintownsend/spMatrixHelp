@@ -1,5 +1,8 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o rcr patternize
+all : spm smac spMatrixHelp.o rcr patternize mkHex
+
+mkHex : mkHex.cpp
+	g++ -O3 -o mkHex mkHex.cpp
 
 benchmark:
 	mkdir benchmark
