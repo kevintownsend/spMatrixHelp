@@ -1,6 +1,9 @@
 prefix=$(HOME)
 all : spm smac spMatrixHelp.o rcr patternize mkHex
 
+vim :
+	vim -p rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp
+
 mkHex : mkHex.cpp
 	g++ -O3 -o mkHex mkHex.cpp
 
@@ -80,6 +83,3 @@ testSmac : smac
 
 clean :
 	rm -rf *.o *.a
-
-vim :
-	vim -p makefile rcr.cpp ../shepard/reference/Makefile
