@@ -1,3 +1,6 @@
 [submodule "verilog/common"]
 	path = verilog/common
 	url = git@github.com:kevintownsend/common.git
+[submodule "verilog/std_fifo"]
+	path = verilog/std_fifo
+	url = git@github.com:kevintownsend/std_fifo.git

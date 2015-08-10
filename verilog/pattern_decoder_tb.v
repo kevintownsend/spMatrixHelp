@@ -11,6 +11,7 @@ module pattern_decoder_tb;
     reg [`TAG_WIDTH-1:0] push_tag;
     reg [`DATA_WIDTH-1:0] data;
     wire req;
+    reg req_stall;
     wire [`TAG_WIDTH-1:0] req_tag;
     wire [`ADDR_WIDTH-1:0] req_addr;
     reg start;
@@ -18,7 +19,9 @@ module pattern_decoder_tb;
     wire index_push;
     wire [`INDEX_WIDTH-1:0] row;
     wire [`INDEX_WIDTH-1:0] col;
-    pattern_decoder dut(rst, clk, push, push_tag, data, req, req_tag, req_addr, start, start_addr, index_push, row, col);
+    pattern_decoder dut(rst, clk, push, push_tag, data, req, req_stall, req_tag, req_addr, start, start_addr, index_push, row, col);
+
+    integer i;
 
     initial begin
         clk = 0;
@@ -35,11 +38,12 @@ module pattern_decoder_tb;
         push = 0;
         data = 0;
         start_addr = 0;
+        req_stall = 0;
         #101 rst = 0;
         #10 start = 1;
         #10 start = 0;
     end
-    reg [`DATA_WIDTH-1:0] memory [0:1000];
+    reg [`DATA_WIDTH-1:0] memory [0:10000];
     initial $readmemh("memory.hex", memory);
     always @(posedge clk) begin
         push <= 0;
@@ -50,6 +54,23 @@ module pattern_decoder_tb;
         end
     end
     //TODO: print out indexes
+    integer stream_bit_size, argument_bit_size;
+    integer memory_locations[0:4];
+    initial begin
+        $display("header data: ");
+        for(i = 0; i < 7; i=i+1) begin
+            $display("%d: %d", i, memory[i]);
+            if (i > 1)
+                memory_locations[i - 2] = memory[i] / 8;
+        end
+        if(0) begin
+            $display("first codes:");
+            for(i = 0; i < (memory_locations[1] - memory_locations[0]); i = i + 1) begin
+                $display("%d: %d %d", i, memory[memory_locations[0] + i][3:0], memory[memory_locations[0] + i][9:4]);
+            end
+            $display("second codes:");
+        end
+    end
     always @(posedge clk) begin
         if(index_push) begin
             $display("index output: %d %d", row, col);

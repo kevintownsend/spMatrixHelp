@@ -1,3 +1,6 @@
+#ifndef RCR_HPP
+#define RCR_HPP
+
 #include <stdio.h>
 #include <string>
 #include <iostream>
@@ -58,6 +61,8 @@ struct Options{
                     this->subWidth = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
                 else if(arg.find("huffmandepth") != string::npos)
                     this->huffmanEncodedDeltas = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
+                else if(arg.find("maxhuffmanlength") != string::npos)
+                    this->maxHuffmanLength = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
                 cerr << "woot woot:" << this->subHeight << endl;
 
             }
@@ -85,16 +90,20 @@ struct Options{
         cerr << "compress: " << this->compress << endl;
         cerr << "subHeight: " << this->subHeight << endl;
         cerr << "subWidth: " << this->subWidth << endl;
+        cerr << "HuffmanCount: " << this->huffmanEncodedDeltas << endl;
         cerr << "inputFilename: " << this->inputFilename << endl;
         cerr << "outputFilename: " << this->outputFilename << endl;
     }
     bool compress=true;
-    int subHeight=4;
-    int subWidth=2;
+    int subHeight=64;
+    int subWidth=4;
     int huffmanEncodedDeltas=4;
+    int maxHuffmanLength=-1;
     string inputFilename="";
     string outputFilename="";
     int N;
     int M;
     int nnz;
 };
+
+#endif

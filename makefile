@@ -1,8 +1,14 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o rcr patternize mkHex
+all : spm smac spMatrixHelp.o rcr patternize mkHex rcrToHard
 
 vim :
-	vim -p rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp
+	vim -p makefile rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp rcrToHard.cpp
+
+rcrToHard : rcrToHard.cpp rcrHelper.hpp rcr.hpp
+	g++ -std=c++11 -O3 -o rcrToHard rcrToHard.cpp rcrHelper.o
+
+rcrHelper.o : rcrHelper.cpp rcrHelper.hpp
+	g++ -std=c++11 -O3 -c rcrHelper.cpp
 
 mkHex : mkHex.cpp
 	g++ -O3 -o mkHex mkHex.cpp
@@ -38,8 +44,8 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
-rcr : rcr.cpp
-	g++ -std=c++11 -o rcr rcr.cpp
+rcr : rcr.cpp rcrHelper.o rcr.hpp
+	g++ -O3 -std=c++11 -o rcr rcr.cpp rcrHelper.o
 
 test: testRcr testSmallQcd
 
