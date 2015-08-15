@@ -26,7 +26,8 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
     `define LD_FIRST_CODES 1
     `define LD_SECOND_CODES 2
     `define WAIT 4
-    `define STEADY 3
+    `define STEADY_1 3
+    `define STEADY_2 6
 
     reg [31:0] counter, next_counter, counter_inc;
     reg [31:0] counter_2, next_counter_2, counter_2_inc;
@@ -34,14 +35,20 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
     always @(posedge clk) begin
         state <= next_state;
         counter <= next_counter;
+        counter_2 <= next_counter_2;
         if(rst)
             state <= `IDLE;
     end
 
+    reg [63:0] header [0:15];
+    reg [31:0] rsp_counter, next_rsp_counter, rsp_counter_inc;
+    reg [31:0] rsp_counter_2, next_rsp_counter_2, rsp_counter_2_inc;
     always @* begin
         next_state = state;
         next_counter = counter;
         counter_inc = counter + 1;
+        next_counter_2 = counter_2;
+        counter_2_inc = counter_2 + 1;
         req = 0;
         req_tag = 0;
         req_addr = start_addr + counter * 8;
@@ -57,8 +64,10 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
                     req_tag = 0;
                     next_counter = counter_inc;
                 end
-                if(next_counter == 7)
+                if(next_counter[4]) begin
                     next_state = `LD_FIRST_CODES;
+                    next_counter[4] = 0;
+                end
             end
             `LD_FIRST_CODES: begin
                 if(!req_stall) begin
@@ -66,37 +75,55 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
                     req_tag = 1;
                     next_counter = counter_inc;
                 end
-                if(next_counter == 7 + 512)
+                if(next_counter[9]) begin
                     next_state = `WAIT;
+                end
             end
             `WAIT: begin
+                next_counter = header[9]/8;
+                next_counter_2 = header[10]/8;
+                if(rsp_counter == 512)
+                    next_state = `STEADY_1;
             end
             `STEADY_1: begin
+                if(!req_stall) begin //TODO: not stall not complete and not backedup
+                    req = 1;
+                    req_tag = 2;
+                    next_counter = counter_inc;
+                end
+                next_state = `STEADY_2;
+
             end
             `STEADY_2: begin
+                req_addr = start_addr + counter_2 * 8;
+                if(!req_stall) begin //TODO: not stall not complete and not backedup
+                    req = 1;
+                    req_tag = 3;
+                    next_counter_2 = counter_2_inc;
+                end
+                next_state = `STEADY_1;
+                if(counter == header[10] / 8 && counter_2 == header[11] / 8)
+                    next_state = `IDLE;
             end
 
         endcase
     end
 
-    reg [63:0] header [0:7];
 
 
     //TODO: count inflight messages
-    reg [31:0] rsp_counter, next_rsp_counter, rsp_counter_inc;
-    reg [31:0] rsp_counter_2, next_rsp_counter_2, rsp_counter_2_inc;
 
     `define FIFO_DEPTH 32
     `define FIFO_ADDR_WIDTH log2(`FIFO_DEPTH - 1)
     `define FIFO_WIDTH_IN 64
-    `define FIFO_WIDTH_OUT 64
+    `define FIFO_WIDTH_OUT 8
     reg huffman_fifo_pop;
     wire [`FIFO_WIDTH_OUT - 1:0] huffman_fifo_q;
     wire huffman_fifo_full, huffman_fifo_empty, huffman_fifo_almost_empty, huffman_fifo_almost_full;
     wire [`FIFO_ADDR_WIDTH:0] huffman_fifo_count;
 
 
-    std_fifo #(`FIFO_WIDTH_IN, `FIFO_DEPTH) huffman_fifo(rst, clk, push && (push_tag == 2), huffman_fifo_pop, data, huffman_fifo_q, huffman_fifo_full, huffman_fifo_empty, huffman_fifo_count, huffman_fifo_almost_empty, huffman_fifo_almost_full);
+    asymmetric_fifo #(`FIFO_WIDTH_IN, `FIFO_DEPTH) huffman_fifo(rst, clk, push && (push_tag == 2), huffman_fifo_pop, data, huffman_fifo_q, huffman_fifo_full, huffman_fifo_empty, huffman_fifo_count, huffman_fifo_almost_empty, huffman_fifo_almost_full);
     //rst, clk, push, pop, d, q, full, empty, count, almost_empty, almost_full
     reg argument_fifo_pop;
     wire [`FIFO_WIDTH_OUT - 1:0] argument_fifo_q;
@@ -118,7 +145,7 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
         if(push && push_tag == 0)
             header[rsp_counter] = data;
         if(push && push_tag == 0)
-            look_up_table[rsp_counter2] = data;
+            look_up_table[rsp_counter_2] = data;
     end
 
     always @* begin
@@ -152,9 +179,9 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
     `define HUFFMAN_BUFFER_SIZE 128
     `define HUFFMAN_BUFFER_ADDR_WIDTH log2(`HUFFMAN_BUFFER_SIZE)
     reg [127:0] stream_buffer, next_stream_buffer;
-    reg [`HUFFMAN_BUFFER_ADDR_WIDTH - 1: 0] stream_buffer_end;
+    reg [`HUFFMAN_BUFFER_ADDR_WIDTH - 1: 0] stream_buffer_end, next_stream_buffer_end;
 
-    reg 
+    //reg 
 
     always @(posedge clk) begin
         stream_buffer <= next_stream_buffer;
@@ -167,13 +194,20 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
             next_stream_buffer = next_stream_buffer >> look_up_table[stream_buffer[8:0]][3:0];
             next_stream_buffer_end = next_stream_buffer_end - look_up_table[stream_buffer[8:0]][3:0];
         end
-        if(!next_stream_buffer_end[`HUFFMAN_BUFFER_ADDR_WIDTH - 1] and !huffman_fifo_empty) begin
+        if(!next_stream_buffer_end[`HUFFMAN_BUFFER_ADDR_WIDTH - 1] && !huffman_fifo_empty) begin
             huffman_fifo_pop = 1;
         end
         if(rst)
             stream_buffer_end = 0;
     end
 
+    localparam ARGUMENT_BUFFER_SIZE=128;
+    localparam ARGUMENT_BUFFER_ADDR_WIDTH=log2(ARGUMENT_BUFFER_SIZE);
+    reg [ARGUMENT_BUFFER_SIZE - 1:0] argument_buffer, next_argument_buffer;
+    reg [ARGUMENT_BUFFER_ADDR_WIDTH - 1:0] argument_buffer_end, next_argument_buffer_end;
+
+    always @(posedge clk) begin
+    end
     //TODO: fifo for requests
     //TODO: fifo for Huffman codes
     //TODO: fifo for arguments

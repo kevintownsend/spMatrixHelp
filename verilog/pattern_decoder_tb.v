@@ -58,15 +58,16 @@ module pattern_decoder_tb;
     integer memory_locations[0:4];
     initial begin
         $display("header data: ");
-        for(i = 0; i < 7; i=i+1) begin
+        for(i = 0; i < 16; i=i+1) begin
             $display("%d: %d", i, memory[i]);
-            if (i > 1)
-                memory_locations[i - 2] = memory[i] / 8;
+            if (i > 7)
+                memory_locations[i - 8] = memory[i] / 8;
         end
-        if(0) begin
+        $display("memorylocation 0: %d", memory_locations[0]);
+        if(1) begin
             $display("first codes:");
             for(i = 0; i < (memory_locations[1] - memory_locations[0]); i = i + 1) begin
-                $display("%d: %d %d", i, memory[memory_locations[0] + i][3:0], memory[memory_locations[0] + i][9:4]);
+                $display("%d: %d %d %d", i, memory[memory_locations[0] + i][3:0], memory[memory_locations[0] + i][5:4], memory[memory_locations[0] + i][10:6]);
             end
             $display("second codes:");
         end

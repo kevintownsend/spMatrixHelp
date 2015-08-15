@@ -4,3 +4,9 @@
 [submodule "verilog/std_fifo"]
 	path = verilog/std_fifo
 	url = git@github.com:kevintownsend/std_fifo.git
+[submodule "verilog/asymmetric_fifo"]
+	path = verilog/asymmetric_fifo
+	url = git@github.com:kevintownsend/asymmetric_fifo.git
+[submodule "verilog/ram"]
+	path = verilog/ram
+	url = git@github.com:kevintownsend/ram.git
