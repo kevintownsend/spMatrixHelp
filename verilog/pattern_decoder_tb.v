@@ -48,9 +48,10 @@ module pattern_decoder_tb;
     always @(posedge clk) begin
         push <= 0;
         data <= 0;
+        push_tag <= req_tag;
         if(req) begin
             push <= 1;
-            data <= memory[req_addr];
+            data <= memory[req_addr / 8];
         end
     end
     //TODO: print out indexes
