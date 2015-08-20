@@ -1,8 +1,5 @@
-TODO: examples in makefile
-TODO: rcr file
-TODO: print compression ratio
-TODO: -c -x
-TODO: log file
-TODO: add bitlength to huffman codes
-TODO: mtxDiff
-TODO: patternize
+TODO: create a RAM friendly version
+TODO: rcrhelper file.
+TODO: rcr to hard.
+TODO: determine the maximum code length for 32 huffman codes.
+TODO: bit fields for hard

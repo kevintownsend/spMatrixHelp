@@ -1,5 +1,17 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o rcr patternize
+all : spm smac spMatrixHelp.o rcr patternize mkHex rcrToHard
+
+vim :
+	vim -p makefile rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp rcrToHard.cpp
+
+rcrToHard : rcrToHard.cpp rcrHelper.hpp rcr.hpp
+	g++ -std=c++11 -O3 -o rcrToHard rcrToHard.cpp rcrHelper.o
+
+rcrHelper.o : rcrHelper.cpp rcrHelper.hpp
+	g++ -std=c++11 -O3 -c rcrHelper.cpp
+
+mkHex : mkHex.cpp
+	g++ -O3 -o mkHex mkHex.cpp
 
 benchmark:
 	mkdir benchmark
@@ -8,7 +20,7 @@ benchmark:
 	cp example.mtx benchmark/.
 
 run : benchmark patternize rcr
-	rcrScript
+	rcrScript.py
 
 patternize: patternize.cpp
 	g++ -O3 -std=c++11 -o patternize patternize.cpp
@@ -32,15 +44,20 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
+<<<<<<< HEAD
 rcr : rcr.cpp
 	g++ -std=gnu++0x -o rcr rcr.cpp
+=======
+rcr : rcr.cpp rcrHelper.o rcr.hpp
+	g++ -O3 -std=c++11 -o rcr rcr.cpp rcrHelper.o
+>>>>>>> fd66969d6ed9444d2ac228091e7b47e4617a67b0
 
 test: testRcr testSmallQcd
 
 testRcr: rcr
-	rcr -c --subheight=4 example.mtx example.rcr
+	time rcr -c --subheight=4 example.mtx example.rcr
 	echo "part 2:"
-	rcr -x --subheight=4 example.rcr exampleProcessed.mtx
+	time rcr -x --subheight=4 example.rcr exampleProcessed.mtx
 	echo "check:"
 	diff example.mtx exampleProcessed.mtx
 
@@ -77,6 +94,3 @@ testSmac : smac
 
 clean :
 	rm -rf *.o *.a
-
-vim :
-	vim -p makefile rcr.cpp ../shepard/reference/Makefile
