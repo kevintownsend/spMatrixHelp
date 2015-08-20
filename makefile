@@ -33,7 +33,7 @@ release :
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
 rcr : rcr.cpp
-	g++ -std=c++11 -o rcr rcr.cpp
+	g++ -std=gnu++0x -o rcr rcr.cpp
 
 test: testRcr testSmallQcd
 
