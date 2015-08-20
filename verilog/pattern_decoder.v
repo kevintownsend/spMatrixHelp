@@ -236,12 +236,16 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
     localparam ARGUMENT_BUFFER_SIZE=64;
     localparam ARGUMENT_BUFFER_ADDR_WIDTH=log2(ARGUMENT_BUFFER_SIZE - 1);
     reg [ARGUMENT_BUFFER_SIZE - 1:0] argument_buffer, next_argument_buffer;
-    reg [ARGUMENT_BUFFER_ADDR_WIDTH - 1:0] argument_buffer_end, next_argument_buffer_end;
+    reg [ARGUMENT_BUFFER_ADDR_WIDTH:0] argument_buffer_end, next_argument_buffer_end;
 
     always @(posedge clk) begin
+        if(argument_buffer_end != next_argument_buffer_end) begin
+            $display("argument buffer change: %d", next_argument_buffer_end);
+        end
         argument_buffer <= next_argument_buffer;
         argument_buffer_end <= next_argument_buffer_end;
     end
+
 
     reg stage_2;
     reg [31:0] stage_2_delta;
@@ -252,26 +256,37 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
         stage_2 = 0;
         argument_fifo_pop = 0;
         stage_2_fifo_pop = 0;
+        $display("debugging argument comp");
+        $display("debug1: %H", next_argument_buffer);
         if(argument_buffer_end > 31 && !stage_2_fifo_empty) begin
             stage_2 = 1;
             stage_2_fifo_pop = 1;
             if(stage_2_fifo_q[1:0] == 2) begin
                 next_argument_buffer = next_argument_buffer >> stage_2_fifo_q[6:2];
                 next_argument_buffer_end = next_argument_buffer_end - stage_2_fifo_q[6:2];
+                $display("debug: %H", ~(-1 << stage_2_fifo_q[6:2]));
+                $display("debug: %H", argument_buffer);
+                $display("debug: %H", (~(-1 << stage_2_fifo_q[6:2]) & argument_buffer));
                 stage_2_delta = ~(-1 << stage_2_fifo_q[6:2]) & argument_buffer | (1 << stage_2_fifo_q[6:2]);
             end
         end
+        $display("debug2: %H", next_argument_buffer);
         if(next_argument_buffer_end < 33 && !argument_fifo_empty) begin
             argument_fifo_pop = 1;
+            $display("debug21: %H", argument_fifo_q);
             next_argument_buffer = next_argument_buffer | (argument_fifo_q << next_argument_buffer_end);
             next_argument_buffer_end = next_argument_buffer_end + 32;
         end
+        $display("debug3: %H", next_argument_buffer);
         if(rst) begin
             next_argument_buffer_end = 0;
             next_argument_buffer = 0;
         end
     end
-
+    reg stage_3_fifo_pop, stage_3_fifo_pop_delay;
+    wire [33:0] stage_3_fifo_q;
+    wire stage_3_fifo_full, stage_3_fifo_empty, stage_3_fifo_almost_empty, stage_3_fifo_almost_full;
+    wire [log2(31):0] stage_3_fifo_count;
     std_fifo #(34, 32) stage_3_fifo(rst, clk, stage_2, stage_3_fifo_pop, {stage_2_delta, stage_2_fifo_q[1:0]}, stage_3_fifo_q, stage_3_fifo_full, stage_3_fifo_empty, stage_3_fifo_count, stage_3_fifo_almost_empty, stage_3_fifo_almost_full);
 
     //TODO: fifo for requests
@@ -280,12 +295,77 @@ module pattern_decoder(rst, clk, push, push_tag, data, req, req_stall, req_tag, 
     reg [31:0] row_index, next_row_index;
     reg [31:0] col_index, next_col_index;
     reg [31:0] index_count, next_index_count, index_count_inc;
-
+    reg stage_3, comp_stage_3;
+    always @(posedge clk) begin
+        row_index <= next_row_index;
+        col_index <= next_col_index;
+        index_count <= next_index_count;
+        stage_3_fifo_pop_delay <= stage_3_fifo_pop;
+        stage_3 <= comp_stage_3;
+        if(stage_3)
+            $display("stage_3: %d row: %d col: %d", index_count, row_index, col_index);
+        if(stage_2)
+            $display("stage_2: %d code: %d", stage_2_delta, stage_2_fifo_q[1:0]);
+    end
+    wire [31:0] stage_3_delta_in;
+    wire [1:0] stage_3_code_in;
+    wire carry_0, carry_1;
+    assign stage_3_delta_in = stage_3_fifo_q[33:2] + 1;
+    assign stage_3_code_in = stage_3_fifo_q[1:0];
+    //TODO: use assign to add 64x4
+    wire [31:0] next_inter_row_index;
+    wire [31:0] next_inter_col_index;
+    localparam SUBWIDTH = 4;
+    localparam LOG2_SUBWIDTH = log2(SUBWIDTH - 1);
+    localparam SUBHEIGHT = 64;
+    localparam LOG2_SUBHEIGHT = log2(SUBHEIGHT - 1);
+    assign {carry_0, next_inter_col_index[LOG2_SUBWIDTH - 1:0]} = {1'H0, col_index[LOG2_SUBWIDTH - 1:0]} + stage_3_delta_in[LOG2_SUBWIDTH - 1:0];
+    assign {carry_1, next_inter_row_index[LOG2_SUBHEIGHT - 1 : 0]} = {1'H0, row_index[LOG2_SUBHEIGHT - 1 :0]} + stage_3_delta_in[LOG2_SUBWIDTH + LOG2_SUBHEIGHT - 1 -:LOG2_SUBHEIGHT] + carry_0;
+    assign next_inter_col_index[31:LOG2_SUBWIDTH] = col_index[31:LOG2_SUBWIDTH] + stage_3_delta_in[31:LOG2_SUBWIDTH + LOG2_SUBHEIGHT] + carry_1;
+    always @* begin
+        $display("debug stage3");
+        next_row_index = row_index;
+        next_col_index = col_index;
+        next_index_count = index_count;
+        stage_3_fifo_pop = 0;
+        comp_stage_3 = 0;
+        $display("debug row: %H", next_row_index);
+        $display("debug col: %H", next_col_index);
+        if(!stage_3_fifo_empty) begin
+            stage_3_fifo_pop = 1;
+        end
+        $display("debug row: %H", next_row_index);
+        $display("debug col: %H", next_col_index);
+        if(stage_3_fifo_pop_delay) begin
+            if(stage_3_code_in != 0) begin
+                next_col_index = next_inter_col_index;
+                next_row_index[LOG2_SUBHEIGHT - 1:0] = next_inter_row_index[LOG2_SUBHEIGHT - 1:0];
+                comp_stage_3 = 1;
+            end else begin
+                next_col_index = -1;
+                next_row_index[LOG2_SUBHEIGHT - 1:0] = -1;
+                next_row_index[31:LOG2_SUBHEIGHT] = row_index[31:LOG2_SUBHEIGHT] + 1;
+            end
+        end
+        $display("delta: %H", stage_3_delta_in);
+        $display("debug row: %H", next_row_index);
+        $display("debug col: %H", next_col_index);
+        if(stage_3)
+            next_index_count = index_count + 1;
+        $display("debug row: %H", next_row_index);
+        $display("debug col: %H", next_col_index);
+        if(rst) begin
+            next_col_index = -1;
+            next_row_index[LOG2_SUBHEIGHT - 1:0] = -1;
+            next_row_index[31:LOG2_SUBHEIGHT] = 0;
+            next_index_count = 0;
+        end
+    end
 
     always @* begin
-        index_push = 0;
-        row = 42;
-        col = 42;
+        index_push = stage_3 & (index_count < header[3]);
+        row = row_index;
+        col = col_index;
     end
     `include "log2.vh"
 endmodule
