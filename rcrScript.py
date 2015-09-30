@@ -37,7 +37,7 @@ if(optimalWidth == -1):
             compressionRatios[-1].append([])
             j = 1
             while(j <= 512):
-                call(["rcr", "-c", "--subwidth=" + repr(i), "--subheight=" + repr(j), "./benchmark/" + m + ".mtx", "./tmp/" + m + ".rcr"])
+                call(["rcr", "-c", "--subwidth=" + repr(i), "--subheight=" + repr(j), "--huffmandepth=32", "--maxhuffmanlength=9", "./benchmark/" + m + ".mtx", "./tmp/" + m + ".rcr"])
                 filesize = os.stat("./tmp/" + m + ".rcr").st_size
                 compressionRatios[-1][-1].append(filesize / sizes[-1]);
                 print("filesize: " + repr(filesize))

@@ -44,13 +44,8 @@ release :
 	cp spMatrixHelp.o $(prefix)/lib/.
 	cp spMatrixHelp.hpp $(prefix)/include/.
 
-<<<<<<< HEAD
-rcr : rcr.cpp
-	g++ -std=gnu++0x -o rcr rcr.cpp
-=======
 rcr : rcr.cpp rcrHelper.o rcr.hpp
 	g++ -O3 -std=c++11 -o rcr rcr.cpp rcrHelper.o
->>>>>>> fd66969d6ed9444d2ac228091e7b47e4617a67b0
 
 test: testRcr testSmallQcd
 
