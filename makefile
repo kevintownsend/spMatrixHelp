@@ -1,8 +1,8 @@
 prefix=$(HOME)
-all : spm smac spMatrixHelp.o rcr patternize mkHex rcrToHard
+all : spm
 
 vim :
-	vim -p makefile rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp rcrToHard.cpp
+	vim -p makefile spm.hpp rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp rcrToHard.cpp
 
 rcrToHard : rcrToHard.cpp rcrHelper.hpp rcr.hpp
 	g++ -std=c++11 -O3 -o rcrToHard rcrToHard.cpp rcrHelper.o
@@ -34,8 +34,8 @@ mmio.o : mmio.c
 smac : mmio.o mcv.o smac.cpp
 	g++ -O3 -Wall -o smac smac.cpp mmio.o mcv.o
 
-spm : mmio.o spm.cpp
-	g++ -O3 -o spm spm.cpp mmio.o
+spm : spm.cpp spm.hpp
+	g++ -std=gnu++11 -O3 -o spm spm.cpp
 
 spMatrixHelp.o : spMatrixHelp.hpp spMatrixHelp.cpp
 	g++ -std=gnu++0x -O3 -c spMatrixHelp.cpp

@@ -37,8 +37,8 @@ if(optimalWidth == -1):
             compressionRatios[-1].append([])
             j = 1
             while(j <= 512):
-                call(["rcr", "-c", "--subwidth=" + repr(i), "--subheight=" + repr(j), "--huffmandepth=32", "--maxhuffmanlength=9", "./benchmark/" + m + ".mtx", "./tmp/" + m + ".rcr"])
-                filesize = os.stat("./tmp/" + m + ".rcr").st_size
+                call(["spm", "-c", "--subwidth=" + repr(i), "--subheight=" + repr(j), "--huffmandepth=32", "--maxhuffmanlength=9", "./benchmark/" + m + ".mtx", "./tmp/" + m + ".spm"])
+                filesize = os.stat("./tmp/" + m + ".spm").st_size
                 compressionRatios[-1][-1].append(filesize / sizes[-1]);
                 print("filesize: " + repr(filesize))
                 j *= 2
@@ -72,8 +72,8 @@ results = []
 for i in range(len(matrices)):
     results.append([])
     for j in range(10):
-        call(["rcr", "-c", "--subwidth=8", "--subheight=128", "--huffmandepth=" + repr(2**j), "./benchmark/" + matrices[i] + ".mtx", "./tmp/" + matrices[i] + ".rcr"])
-        filesize = os.stat("./tmp/" + matrices[i] + ".rcr").st_size
+        call(["spm", "-c", "--subwidth=8", "--subheight=128", "--huffmandepth=" + repr(2**j), "./benchmark/" + matrices[i] + ".mtx", "./tmp/" + matrices[i] + ".spm"])
+        filesize = os.stat("./tmp/" + matrices[i] + ".spm").st_size
         results[-1].append(filesize / sizes[i])
 
 averages = []
