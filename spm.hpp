@@ -313,41 +313,10 @@ bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argu
 int spmDecompress(SpmOptions mainOptions){
     return 0;
 }
-int spmCompress(SpmOptions mainOptions){
-    if(mainOptions.inputFilename != "")
-        freopen(mainOptions.inputFilename.c_str(), "r", stdin);
-    scanf("%[^\n]", buffer);
-    cerr << buffer << endl;
-    string matrixCode;
-    bool pattern = true;
-    if(string(buffer).find("real") != string::npos)
-        pattern = false;
-    int M, N, nnz;
-    scanf("%d %d %d", &M, &N, &nnz);
-    mainOptions.M = M;
-    mainOptions.N = N;
-    mainOptions.nnz = nnz;
-    //TODO: sub row sub col
-    int subRow=mainOptions.subHeight;
-    int subCol=mainOptions.subWidth;
-    vector<ll> row;
-    vector<ll> col;
-    vector<double> values;
-    cerr << nnz << "\n";
-    cerr << M << "\n";
-    cerr << N << "\n";
-    for(ll i = 0; i < nnz; ++i){
-        ll tmp1, tmp2;
-        if(!pattern){
-            double tmp3;
-            scanf("%lld %lld %lf", &tmp1, &tmp2, &tmp3);
-        }else{
-            scanf("%lld %lld", &tmp1, &tmp2);
-        }
-        row.push_back(tmp1-1);
-        col.push_back(tmp2-1);
-    }
+int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, int subRow = 256, int subCol = 16, int huffmanCodesSize = 6, int maxHuffmanLength = -1);
+int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, int subRow, int subCol, int huffmanCodesSize, int maxHuffmanLength){
     //rcr 42
+    int nnz = row.size();
     cerr << "creating matrix map\n";
     map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
@@ -380,7 +349,7 @@ int spmCompress(SpmOptions mainOptions){
         p2=0; p3=0; p4=0;
     }
     map<SpmCode, ll> distribution;
-    int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
+    //int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
     cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
@@ -391,8 +360,8 @@ int spmCompress(SpmOptions mainOptions){
             distribution[SpmCode(RANGE,(ll)log2(deltas[i]))]++;
     }
     vector<SpmCode> codes;
-    if(mainOptions.maxHuffmanLength != -1)
-        codes = createCodes(distribution, mainOptions.nnz, mainOptions.maxHuffmanLength);
+    if(maxHuffmanLength != -1)
+        codes = createCodes(distribution, nnz, maxHuffmanLength);
     else{}
         //codes = createCodes(distribution);
     int maxCodeLength = FindMaxCodeLength(codes);
@@ -402,8 +371,6 @@ int spmCompress(SpmOptions mainOptions){
     for(int i = 0; i < codes.size(); ++i){
         codeMap[codes[i]] = codes[i];
     }
-    vector<ull> encodedStream;
-    vector<ull> argumentStream;
     ll encodedCurrBit = 0;
     ll encodedLatest = 0;
     ll argumentCurrBit = 0;
@@ -471,46 +438,54 @@ int spmCompress(SpmOptions mainOptions){
         argumentLength += 64*argumentStream.size();
     else
         argumentLength += 64*argumentStream.size();
+}
+
+int spmCompress(SpmOptions mainOptions){
+    if(mainOptions.inputFilename != "")
+        freopen(mainOptions.inputFilename.c_str(), "r", stdin);
+    scanf("%[^\n]", buffer);
+    cerr << buffer << endl;
+    string matrixCode;
+    bool pattern = true;
+    if(string(buffer).find("real") != string::npos)
+        pattern = false;
+    int M, N, nnz;
+    scanf("%d %d %d", &M, &N, &nnz);
+    mainOptions.M = M;
+    mainOptions.N = N;
+    mainOptions.nnz = nnz;
+    //TODO: sub row sub col
+    int subRow=mainOptions.subHeight;
+    int subCol=mainOptions.subWidth;
+    vector<ull> row;
+    vector<ull> col;
+    vector<double> values;
+    cerr << nnz << "\n";
+    cerr << M << "\n";
+    cerr << N << "\n";
+    for(ll i = 0; i < nnz; ++i){
+        ll tmp1, tmp2;
+        if(!pattern){
+            double tmp3;
+            scanf("%lld %lld %lf", &tmp1, &tmp2, &tmp3);
+        }else{
+            scanf("%lld %lld", &tmp1, &tmp2);
+        }
+        row.push_back(tmp1-1);
+        col.push_back(tmp2-1);
+    }
+    vector<ull> encodedStream;
+    vector<ull> argumentStream;
+    vector<SpmCode> codes;
+    ull length, argumentLength;
+    bool ret = spmCompress(row, col, codes, encodedStream, argumentStream);
     FILE* tmp;
+
     //freopen(tmp, "w", stdout);
     if(mainOptions.outputFilename == "")
         writeToFile(mainOptions, encodedStream, argumentStream, codes, length, argumentLength, stdout);
     else
         writeToFile(mainOptions, encodedStream, argumentStream, codes, length, argumentLength, mainOptions.outputFilename);
-    //writeToFile(encodedStream, codes, length, "output.rcr");
-    //TODO: end
-    //return 0;
-    cerr << "done compressing, staring check" << endl;
-    //Checking
-    vector<ull> reencodedStream;
-    vector<ull> reencodedArgumentStream;
-    vector<SpmCode> recodes;
-    ll relength;
-    ll reArgumentLength;
-    //TODO: fix
-    readFromFile(mainOptions, reencodedStream, reencodedArgumentStream, recodes, relength, reArgumentLength, mainOptions.outputFilename);
-    cerr << "done reading" << endl;
-    if(!checkEquality(encodedStream, reencodedStream, codes, recodes)){
-        cerr << "check failed" << endl;
-    }
-    cerr << "decoding" << endl;
-    vector<ll> decodedDeltas = decode(encodedStream, argumentStream, codes, length, argumentLength);
-    cerr << "checking" << endl;
-    if(false){
-        for(int i = 0; i < decodedDeltas.size(); ++i){
-            cerr << dec << decodedDeltas[i] << " ";
-            if(decodedDeltas[i] != deltas[i]){
-                cerr << endl;
-                cerr << "ERROR: missmatch" << endl;
-                cerr << "index: " << i << endl;
-                cerr << "real: " << deltas[i] << endl;
-                cerr << "decoded: " << decodedDeltas[i] << endl;
-                return 1;
-            }
-        }
-    }
-    //TODO: deltas to indices
-    //TODO: check
     return 0;
 }
 int extract(SpmOptions mainOptions){
