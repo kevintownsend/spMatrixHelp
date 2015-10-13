@@ -17,11 +17,13 @@ using namespace std;
 
 typedef long long ll;
 typedef unsigned long long ull;
-enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
+//enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
 //TODO: change to 8 bytes
 struct SpmCode{
     ull encode_length : 3;
-    CodeType ct : 2;
+    enum CodeType {
+        NEWLINE, CONSTANT, RANGE
+    }ct : 2;
     ull delta : 5;
     ull encode : 7;
     SpmCode(){}
@@ -359,11 +361,11 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
-            distribution[SpmCode(NEWLINE, 0)]++;
+            distribution[SpmCode(SpmCode::NEWLINE, 0)]++;
         else if(deltas[i] < huffmanCodesSize-2)
-            distribution[SpmCode(CONSTANT,deltas[i])]++;
+            distribution[SpmCode(SpmCode::CONSTANT,deltas[i])]++;
         else
-            distribution[SpmCode(RANGE,(ll)log2(deltas[i]))]++;
+            distribution[SpmCode(SpmCode::RANGE,(ll)log2(deltas[i]))]++;
     }
     vector<SpmCode> codes;
     if(maxHuffmanLength != -1)
@@ -387,11 +389,11 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         SpmCode deltaCode;
         ll deltaArgument = 0;
         if(delta == -1)
-            deltaCode = SpmCode(NEWLINE, 0);
+            deltaCode = SpmCode(SpmCode::NEWLINE, 0);
         else if(delta >= huffmanCodesSize - 2)
-            deltaCode = SpmCode(RANGE, (ll)log2(delta));
+            deltaCode = SpmCode(SpmCode::RANGE, (ll)log2(delta));
         else
-            deltaCode = SpmCode(CONSTANT, delta);
+            deltaCode = SpmCode(SpmCode::CONSTANT, delta);
         encodedLatest |= codeMap[deltaCode].encode << encodedCurrBit;
         if(encodedCurrBit + codeMap[deltaCode].encode_length == 64){
             encodedStream.push_back(encodedLatest);
@@ -405,7 +407,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
             encodedCurrBit = encodedCurrBit + codeMap[deltaCode].encode_length;
         }
         //Argument
-        if(deltaCode.ct == RANGE){
+        if(deltaCode.ct == SpmCode::RANGE){
             ull delta = deltas[i] & ~(1ULL << ((ull)log2(deltas[i])));
             argumentLatest |= delta << argumentCurrBit;
             int width = (int)log2(deltas[i]);
@@ -588,7 +590,7 @@ bool readFromFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &arg
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
             fscanf(input, "%c", printerPtr++);
-        tmpCode.ct = (CodeType)tmp;
+        tmpCode.ct = (SpmCode::CodeType)tmp;
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j)
             fscanf(input, "%c", printerPtr++);
@@ -691,9 +693,9 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
         //cerr << "delta: " << it->second.delta << endl;
         currBit += tmp.encode_length;
         //TODO: decode gamma code
-        if(tmp.ct == NEWLINE){
+        if(tmp.ct == SpmCode::NEWLINE){
             decoded.push_back(-1);
-        }else if(tmp.ct == RANGE){
+        }else if(tmp.ct == SpmCode::RANGE){
             latest = argumentStream[argumentCurrBit/64] >> (argumentCurrBit % 64);
             if(argumentCurrBit/64 + 1 < argumentStream.size() && (argumentCurrBit % 64) != 0)
                 latest |= argumentStream[argumentCurrBit/64+1] << (64 - argumentCurrBit % 64);

@@ -2,7 +2,7 @@ prefix=$(HOME)
 all : spm
 
 vim :
-	vim -p makefile spm.hpp rcr.cpp rcr.hpp rcrHelper.cpp rcrHelper.hpp rcrToHard.cpp
+	vim -p makefile spm.hpp spm.cpp rcrToHard.cpp
 
 rcrToHard : rcrToHard.cpp rcrHelper.hpp rcr.hpp
 	g++ -std=c++11 -O3 -o rcrToHard rcrToHard.cpp rcrHelper.o
@@ -19,7 +19,12 @@ benchmark:
 	unzip matrices.zip -d benchmark/.
 	cp example.mtx benchmark/.
 
-run : benchmark patternize rcr
+run : spm
+	spm -c example.mtx example.spm
+	spm -d example.spm exampleAfter.mtx
+	echo exampleAfter.mtx
+
+run2 : benchmark patternize rcr
 	rcrScript.py
 
 patternize: patternize.cpp
@@ -35,7 +40,7 @@ smac : mmio.o mcv.o smac.cpp
 	g++ -O3 -Wall -o smac smac.cpp mmio.o mcv.o
 
 spm : spm.cpp spm.hpp
-	g++ -std=gnu++11 -O3 -o spm spm.cpp
+	g++ -std=gnu++11 -O0 -o spm spm.cpp
 
 spMatrixHelp.o : spMatrixHelp.hpp spMatrixHelp.cpp
 	g++ -std=gnu++0x -O3 -c spMatrixHelp.cpp
