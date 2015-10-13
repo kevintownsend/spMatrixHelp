@@ -18,11 +18,12 @@ using namespace std;
 typedef long long ll;
 typedef unsigned long long ull;
 enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
+//TODO: change to 8 bytes
 struct SpmCode{
-    CodeType ct;
-    ull delta;
-    ull encode;
-    int encode_length;
+    ull encode_length : 3;
+    CodeType ct : 2;
+    ull delta : 5;
+    ull encode : 7;
     SpmCode(){}
     SpmCode(CodeType ct, ull delta){
         this->ct = ct;
@@ -313,7 +314,12 @@ bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argu
 int spmDecompress(SpmOptions mainOptions){
     return 0;
 }
+int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, int subRow = 256, int subCol = 16){
+    return 0;
+}
+
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, int subRow = 256, int subCol = 16, int huffmanCodesSize = 6, int maxHuffmanLength = -1);
+
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, int subRow, int subCol, int huffmanCodesSize, int maxHuffmanLength){
     //rcr 42
     int nnz = row.size();
@@ -438,6 +444,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         argumentLength += 64*argumentStream.size();
     else
         argumentLength += 64*argumentStream.size();
+    spmCodes = codes;
 }
 
 int spmCompress(SpmOptions mainOptions){
