@@ -37,6 +37,6 @@ checkVsim : work $(vsim_pattern_decoder_tb) $(vsim_pattern_decoder) $(vsim_std_f
 	echo -e "vsim work.pattern_decoder_tb\nrun -all" | vsim
 
 vim :
-	vim -p pattern_decoder.v pattern_decoder_tb.v asymmetric_fifo/asymmetric_fifo.v makefile ~/.vim/bundle/vim-vsim-compiler/compiler/vsim.vim ../../inara-hdl-libraries/std_fifo/makefile ../../inara-hdl-libraries/std_fifo/vsim.mk std_fifo/std_fifo.v
+	vim -p pattern_decoder.v pattern_decoder_tb.v xst.mk asymmetric_fifo/asymmetric_fifo.v makefile std_fifo/std_fifo.v
 
 include xst.mk
