@@ -22,7 +22,7 @@ benchmark:
 run : spm
 	spm -c example.mtx example.spm
 	spm -d example.spm exampleAfter.mtx
-	echo exampleAfter.mtx
+	cat exampleAfter.mtx
 
 run2 : benchmark patternize rcr
 	rcrScript.py
