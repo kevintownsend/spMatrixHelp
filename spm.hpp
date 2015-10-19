@@ -385,16 +385,18 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
             //TODO: finish
             y = (y / subHeight) * subHeight + leastSignificant;
             x += mostSignificant * subWidth;
+            row.push_back(y);
+            col.push_back(x);
             mapIndices[y][x] = true;
         }
     }
+    return 0;
     for(auto it1 = mapIndices.begin(); it1 != mapIndices.end(); ++it1)
         for(auto it2 = it1->second.begin(); it2 != it1->second.end(); ++it2){
             row.push_back(it1->first);
             col.push_back(it2->first);
         }
 
-    return 0;
 }
 
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = 256, int subCol = 16, int huffmanCodesSize = 6, int maxHuffmanLength = 7);
