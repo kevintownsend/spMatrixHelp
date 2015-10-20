@@ -402,6 +402,9 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = 256, int subCol = 16, int huffmanCodesSize = 6, int maxHuffmanLength = 7);
 
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow, int subCol, int huffmanCodesSize, int maxHuffmanLength){
+    spmCodes.clear();
+    encodedStream.clear();
+    argumentStream.clear();
     //rcr 42
     int nnz = row.size();
     cerr << "creating matrix map\n";
@@ -507,10 +510,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 argumentCurrBit += width;
             }
         }
+        /*
         cerr << "encodedCurrBit: " << encodedCurrBit << endl;
         cerr << "argumentCurrBit: " << argumentCurrBit << endl;
         cerr << "argument: " << hex << argumentLatest << endl;
         cerr << dec;
+        */
     }
     length = encodedCurrBit;
     length += 64*encodedStream.size();
@@ -528,8 +533,14 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     double averageBits = (encodedStream.size()*64.0/deltas.size());
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
-    //decoding
-    spmCodes = codes;
+    //spmCodes = codes;
+    spmCodes.resize(1 << 7);
+    for(int i = 0; i < codes.size(); ++i){
+        for(int j = codes[i].encode; j < 1 << 7; j += 1 << codes[i].encode_length){
+            spmCodes[j] = codes[i];
+        }
+    }
+
     cerr << "length: " << length << endl;
     cerr << "argumentLength: " << argumentLength << endl;
 }
