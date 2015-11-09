@@ -33,7 +33,11 @@ struct SpmCode{
     }
 
     bool operator<(const SpmCode& rhs) const{
-        return tie(this->ct, this->delta) < tie(rhs.ct, rhs.delta);
+        if(this->ct == rhs.ct)
+            return this->delta < rhs.delta;
+        else
+            return this->ct < rhs.ct;
+        //return tie(this->ct, this->delta) < tie(rhs.ct, rhs.delta);
     }
 
     bool operator==(const SpmCode& rhs) const{
@@ -42,14 +46,25 @@ struct SpmCode{
 };
 
 struct SpmNode{
-    int left = -1;
-    int right = -1;
+    int left;
+    int right;
     int frequency;
     SpmCode code;
+    SpmNode(){
+        left = -1;
+        right = -1;
+    }
 };
 
 struct SpmOptions{
     SpmOptions(int argc, char* argv[]){
+        compress=true;
+        subHeight=256;
+        subWidth=16;
+        huffmanEncodedDeltas=4;
+        maxHuffmanLength=-1;
+        inputFilename="";
+        outputFilename="";
         cerr << "hello world" << endl;
         if(argc == 1)
             return;
@@ -100,13 +115,13 @@ struct SpmOptions{
         cerr << "inputFilename: " << this->inputFilename << endl;
         cerr << "outputFilename: " << this->outputFilename << endl;
     }
-    bool compress=true;
-    int subHeight=256;
-    int subWidth=16;
-    int huffmanEncodedDeltas=4;
-    int maxHuffmanLength=-1;
-    string inputFilename="";
-    string outputFilename="";
+    bool compress;
+    int subHeight;
+    int subWidth;
+    int huffmanEncodedDeltas;
+    int maxHuffmanLength;
+    string inputFilename;
+    string outputFilename;
     int N;
     int M;
     int nnz;
@@ -334,6 +349,7 @@ int spmDecompress(SpmOptions options){
     ll length;
     ll argumentLength;
     readFromFile(options, encodedStream, encodedArgumentStream, codes, length, argumentLength, options.inputFilename);
+    /*
     cerr <<  hex << "first arg: " << encodedArgumentStream[0] << endl;
     cerr << dec;
     cerr << "codes: " << endl;
@@ -344,6 +360,7 @@ int spmDecompress(SpmOptions options){
         cerr << "delta: " << codes[i].delta << endl;
         cerr << "encode: " << codes[i].encode << endl;
     }
+    */
 
     vector<ull> row;
     vector<ull> col;
@@ -438,10 +455,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         delta = 0;
         p2=0; p3=0; p4=0;
     }
+    /*
     cerr << "deltas: " << deltas.size() << endl;
     for(int i = 0; i < deltas.size(); ++i){
         cerr << i << ": " << deltas[i] << endl;
     }
+    */
     map<SpmCode, ll> distribution;
     //int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
     cerr << "creating huffman codes\n";

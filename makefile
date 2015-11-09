@@ -40,7 +40,7 @@ smac : mmio.o mcv.o smac.cpp
 	g++ -O3 -Wall -o smac smac.cpp mmio.o mcv.o
 
 spm : spm.cpp spm.hpp
-	g++ -std=gnu++11 -O0 -o spm spm.cpp
+	g++ -std=gnu++0x -O0 -o spm spm.cpp
 
 spMatrixHelp.o : spMatrixHelp.hpp spMatrixHelp.cpp
 	g++ -std=gnu++0x -O3 -c spMatrixHelp.cpp
