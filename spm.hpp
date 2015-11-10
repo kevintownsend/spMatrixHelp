@@ -443,7 +443,11 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i){
             deltas.push_back(-1);
-            cerr << "ug: " << deltas.size() << endl;
+            if(deltas.size() > 4100000){
+                cerr << "ug: " << deltas.size() << endl;
+                cerr << "adding -1s" << endl;
+
+            }
             //deltas2[delta2Index] = -1;
             //delta2Index++;
         }
@@ -454,7 +458,11 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
                     deltas.push_back(delta);
-                    cerr << "ug: " << deltas.size() << endl;
+                    if(deltas.size() > 4100000){
+                        cerr << "ug: " << deltas.size() << endl;
+                        cerr << "adding a delta" << endl;
+
+                    }
                     //deltas2[delta2Index] = delta;
                     //delta2Index++;
                     delta = -1;
@@ -821,10 +829,12 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
             latest |= stream[currBit/64+1] << (64 - currBit % 64);
 
+        /*
         cerr << "decode: \n";
         cerr << hex << latest << endl;
         if(codesMap.lower_bound(latest) == codesMap.end())
             cerr << "wtf" << endl;
+            */
 //        cerr << hex << codesMap.lower_bound(latest)->first << endl;
         //cerr << hex << ((codesMap.lower_bound(latest))-1)->first << endl;
         auto it = codesMap.upper_bound(latest);
