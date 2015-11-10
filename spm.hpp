@@ -166,6 +166,8 @@ ull BitsToInt(vector<bool> bits){
 }
 vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength){
     vector<SpmCode> codes;
+    if(distribution.size() == 0)
+        return codes;
     vector<SpmNode> tree;
     for(auto it = distribution.begin(); it != distribution.end(); ++it){
         SpmNode tmp;
@@ -177,6 +179,7 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
         tmp.code = it->first;
         tree.push_back(tmp);
     }
+    cerr << "tree.size(): " << tree.size() << endl;
     for(int i = 0; i < tree.size()-1; i += 2){
         sort(tree.begin()+i,tree.end(),compare);
         SpmNode tmp;
@@ -378,11 +381,13 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
     cerr << "argumentlength: " << argumentLength << endl;
     vector<ll> decodedDeltas = decode(encodedStream, encodedArgumentStream, spmCodes, length, argumentLength);
     cerr << "deltas size: " << decodedDeltas.size() << endl;
-    cerr << "deltas: " << endl;
+    //cerr << "deltas: " << endl;
     cerr << dec;
+    /*
     for(int i = 0; i < decodedDeltas.size(); ++i){
         cerr << i << ": " << decodedDeltas[i] << endl;
     }
+    */
     //TODO:turn deltas into indices
     ll x = -1;
     ll y  = 0;
@@ -428,6 +433,18 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
         matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
+        /*
+        int j = 0;
+        for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
+            //cerr << i1->first << endl;
+            if(i1->first != j){
+                cerr << "something is wrong" << endl;
+                cerr << "curr: " << row[j] << "prev: " << row[j-1] << endl;
+                exit(1);
+            }
+            j++;
+        }
+        */
     }
     //vector<ll> deltas2;
     vector<ll> deltas;
@@ -437,8 +454,19 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
     cerr << "done part 1\n";
     int i = 0;
+    /*
+    cerr << "debugging matrix:" << endl;
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
-        cerr << "at section" << i << endl;
+        cerr << i1->first << endl;
+        if(i1->first != i){
+            cerr << "something is wrong" << endl;
+            exit(1);
+        }
+        i++;
+    }
+    */
+    i = 0;
+    for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
         i++;
         //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i){
@@ -446,6 +474,9 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
             if(deltas.size() > 4100000){
                 cerr << "ug: " << deltas.size() << endl;
                 cerr << "adding -1s" << endl;
+                cerr << "i1->first: " << i1->first << endl;
+                cerr << "at section" << i << endl;
+                exit(1);
 
             }
             //deltas2[delta2Index] = -1;
