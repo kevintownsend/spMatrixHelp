@@ -424,7 +424,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     argumentStream.clear();
     //rcr 42
     int nnz = row.size();
-    cerr << "creating matrix map\n";
+    cerr << "creating matrix map \n";
     map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
         matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
@@ -432,8 +432,11 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     vector<ll> deltas;
     ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
-    cerr << "\n";
+    cerr << "done part 1\n";
+    int i = 0;
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
+        cerr << "at section" << i << endl;
+        i++;
         //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i)
             deltas.push_back(-1);
