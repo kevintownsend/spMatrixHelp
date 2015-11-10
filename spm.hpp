@@ -429,7 +429,10 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     for(ll i = 0; i < nnz; ++i){
         matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
     }
+    //vector<ll> deltas2;
     vector<ll> deltas;
+    //deltas2.resize(2*nnz);
+    //ll delta2Index = 0;
     ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
     cerr << "done part 1\n";
@@ -438,8 +441,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         cerr << "at section" << i << endl;
         i++;
         //delta += (i1->first - p1)*4*N; //new line
-        for(int i = 0; i < i1->first - p1; ++i)
+        for(int i = 0; i < i1->first - p1; ++i){
             deltas.push_back(-1);
+            cerr << "ug: " << deltas.size() << endl;
+            //deltas2[delta2Index] = -1;
+            //delta2Index++;
+        }
         for(auto i2 = i1->second.begin(); i2 != i1->second.end(); ++i2){
             delta += (i2->first - p2)*subRow*subCol;
             for(auto i3 = i2->second.begin(); i3 != i2->second.end(); ++i3){
@@ -447,6 +454,9 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
                     deltas.push_back(delta);
+                    cerr << "ug: " << deltas.size() << endl;
+                    //deltas2[delta2Index] = delta;
+                    //delta2Index++;
                     delta = -1;
                     p4 = i4->first;
                 }
@@ -458,6 +468,8 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         delta = 0;
         p2=0; p3=0; p4=0;
     }
+    //deltas2.resize(delta2Index);
+    //deltas = deltas2;
     /*
     cerr << "deltas: " << deltas.size() << endl;
     for(int i = 0; i < deltas.size(); ++i){
