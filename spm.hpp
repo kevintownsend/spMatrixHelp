@@ -850,7 +850,7 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
             decoded.push_back(-1);
         }else if(tmp.ct == SpmCode::RANGE){
             latest = argumentStream[argumentCurrBit/64] >> (argumentCurrBit % 64);
-            cerr << "latest argument stream" << hex << latest << endl;
+            //cerr << "latest argument stream" << hex << latest << endl;
             if(argumentCurrBit/64 + 1 < argumentStream.size() && (argumentCurrBit % 64) != 0)
                 latest |= argumentStream[argumentCurrBit/64+1] << (64 - argumentCurrBit % 64);
             int width = tmp.delta;
