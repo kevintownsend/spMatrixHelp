@@ -380,9 +380,12 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
     cerr << "deltas size: " << decodedDeltas.size() << endl;
     cerr << "deltas: " << endl;
     cerr << dec;
+
+    /*
     for(int i = 0; i < decodedDeltas.size(); ++i){
         cerr << i << ": " << decodedDeltas[i] << endl;
     }
+    */
     //TODO:turn deltas into indices
     ll x = -1;
     ll y  = 0;
