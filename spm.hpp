@@ -179,12 +179,8 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
         tmp.code = it->first;
         tree.push_back(tmp);
     }
-<<<<<<< HEAD
     if(tree.size() == 0)
         tree.push_back(SpmNode());
-=======
-    cerr << "tree.size(): " << tree.size() << endl;
->>>>>>> aea7a821a932ea0874c53ed631c340bd583e0fab
     for(int i = 0; i < tree.size()-1; i += 2){
         sort(tree.begin()+i,tree.end(),compare);
         SpmNode tmp;
@@ -386,17 +382,6 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
     cerr << "argumentlength: " << argumentLength << endl;
     vector<ll> decodedDeltas = decode(encodedStream, encodedArgumentStream, spmCodes, length, argumentLength);
     cerr << "deltas size: " << decodedDeltas.size() << endl;
-    //cerr << "deltas: " << endl;
-    cerr << dec;
-<<<<<<< HEAD
-=======
-
->>>>>>> d97b52393f3b6c826b652c50ee1fd4c760ff5176
-    /*
-    for(int i = 0; i < decodedDeltas.size(); ++i){
-        cerr << i << ": " << decodedDeltas[i] << endl;
-    }
-    */
     //TODO:turn deltas into indices
     ll x = -1;
     ll y  = 0;
@@ -480,14 +465,6 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i){
             deltas.push_back(-1);
-            if(deltas.size() > 4100000){
-                cerr << "ug: " << deltas.size() << endl;
-                cerr << "adding -1s" << endl;
-                cerr << "i1->first: " << i1->first << endl;
-                cerr << "at section" << i << endl;
-                exit(1);
-
-            }
             //deltas2[delta2Index] = -1;
             //delta2Index++;
         }
@@ -498,13 +475,6 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
                     deltas.push_back(delta);
-                    if(deltas.size() > 4100000){
-                        cerr << "ug: " << deltas.size() << endl;
-                        cerr << "adding a delta" << endl;
-
-                    }
-                    //deltas2[delta2Index] = delta;
-                    //delta2Index++;
                     delta = -1;
                     p4 = i4->first;
                 }
