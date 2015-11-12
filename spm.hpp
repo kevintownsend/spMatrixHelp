@@ -177,6 +177,8 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
         tmp.code = it->first;
         tree.push_back(tmp);
     }
+    if(tree.size() == 0)
+        tree.push_back(SpmNode());
     for(int i = 0; i < tree.size()-1; i += 2){
         sort(tree.begin()+i,tree.end(),compare);
         SpmNode tmp;
