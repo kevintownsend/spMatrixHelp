@@ -12,6 +12,7 @@
 #include <map>
 #include <algorithm>
 #include <fstream>
+#include "constants.hpp"
 
 using namespace std;
 
@@ -20,12 +21,12 @@ typedef unsigned long long ull;
 //enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
 //TODO: change to 8 bytes
 struct SpmCode{
-    ull encode_length : 3;
+    ull encode_length : LOG2_SPM_CODE_ENCODE_BITS;
     enum CodeType {
         NEWLINE, CONSTANT, RANGE
     }ct : 2;
     ull delta : 5;
-    ull encode : 7;
+    ull encode : SPM_CODE_ENCODE_BITS;
     SpmCode(){}
     SpmCode(CodeType ct, ull delta){
         this->ct = ct;
@@ -419,7 +420,7 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
 
 }
 
-int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = 256, int subCol = 16, int huffmanCodesSize = 6, int maxHuffmanLength = 7);
+int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = SUB_HEIGHT, int subCol = SUB_WIDTH, int huffmanCodesSize = CONSTANT_DELTAS, int maxHuffmanLength = 7);
 
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow, int subCol, int huffmanCodesSize, int maxHuffmanLength){
     spmCodes.clear();
@@ -504,7 +505,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
             distribution[SpmCode(SpmCode::NEWLINE, 0)]++;
-        else if(deltas[i] < huffmanCodesSize-2)
+        else if(deltas[i] < huffmanCodesSize)
             distribution[SpmCode(SpmCode::CONSTANT,deltas[i])]++;
         else
             distribution[SpmCode(SpmCode::RANGE,(ll)log2(deltas[i]))]++;
@@ -537,7 +538,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         ll deltaArgument = 0;
         if(delta == -1)
             deltaCode = SpmCode(SpmCode::NEWLINE, 0);
-        else if(delta >= huffmanCodesSize - 2)
+        else if(delta >= huffmanCodesSize)
             deltaCode = SpmCode(SpmCode::RANGE, (ll)log2(delta));
         else
             deltaCode = SpmCode(SpmCode::CONSTANT, delta);
