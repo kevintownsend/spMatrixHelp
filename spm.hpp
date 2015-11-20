@@ -224,6 +224,10 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
                 break;
             case 2:
                 if(tree[curr].left == -1 && tree[curr].right == -1){
+                    if(path.size() > 7){
+                        cerr << "code too long" << endl;
+                        exit(1);
+                    }
                     SpmCode tmp = tree[curr].code;
                     tmp.encode = BitsToInt(path);
                     tmp.encode_length = path.size();
@@ -506,13 +510,17 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
             distribution[SpmCode(SpmCode::RANGE,(ll)log2(deltas[i]))]++;
     }
     vector<SpmCode> codes;
-    maxHuffmanLength = 7;
+    maxHuffmanLength = 6;
     if(maxHuffmanLength != -1)
         codes = createCodes(distribution, nnz, maxHuffmanLength);
     else{}
         //codes = createCodes(distribution);
     int maxCodeLength = FindMaxCodeLength(codes);
     cerr << "max encode length: " << maxCodeLength << endl;
+    if(maxCodeLength > 7) {
+        cerr << "code length greater than 7" << endl;
+        exit(1);
+    }
     map<SpmCode, SpmCode> codeMap;
     cerr << "creating codeMap\n";
     for(int i = 0; i < codes.size(); ++i){
@@ -821,6 +829,7 @@ bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<SpmCod
 
 vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode> codes, ll length, ll argumentLength){
     int currBit = 0;
+    ull oldCurrBit = 0;
     ull argumentCurrBit = 0;
     vector<ll> decoded;
     map<ull, SpmCode, reverseCmp> codesMap;
@@ -829,11 +838,17 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
     }
     //TODO: print codes
     int i = 0;
-//    for(auto it = codesMap.begin(); it != codesMap.end(); ++it){
-//        cerr << dec << "code index: " << i++ << endl;
-//        cerr << hex << "encode: " << it->first << endl;
-//        cerr << dec << "delta: " << it->second.delta << endl;
-//    }
+    /*
+    cerr << "codes:" << endl;
+    for(auto it = codesMap.begin(); it != codesMap.end(); ++it){
+        cerr << dec << "code index: " << i++ << endl;
+        cerr << hex << "encode: " << it->first << endl;
+        cerr << dec << "encode length: " << it->second.encode_length << endl;
+        cerr << "code type: " << it->second.ct << endl;
+        cerr << dec << "delta: " << it->second.delta << endl;
+    }
+    */
+    i = 0;
     while(currBit < length) {
         ull latest = stream[currBit/64] >> (currBit % 64);
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
@@ -848,10 +863,23 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
 //        cerr << hex << codesMap.lower_bound(latest)->first << endl;
         //cerr << hex << ((codesMap.lower_bound(latest))-1)->first << endl;
         auto it = codesMap.upper_bound(latest);
+        if(it == codesMap.begin())
+            cerr << "ERROR: bad iterator value" << endl;
         --it;
         SpmCode tmp = it->second;
-        //cerr << "delta: " << it->second.delta << endl;
+        /*
+        cerr << "delta: " << it->second.delta << endl;
+        cerr << "i: " << i << endl;
+        cerr << "currBit: " << currBit << "/" << length << endl;
+        */
+        i++;
+        //oldCurrBut = currBit;
+        if(tmp.encode_length == 0){
+            cerr << "ERROR encode lengt equals 0" << endl;
+            exit(1);
+        }
         currBit += tmp.encode_length;
+
         //TODO: decode gamma code
         if(tmp.ct == SpmCode::NEWLINE){
             decoded.push_back(-1);
@@ -872,6 +900,11 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
         }else{
             decoded.push_back(tmp.delta);
         }
+        /*
+        if( it->second.delta == 12){
+        string user;
+        cin >> user;
+        */
     }
     return decoded;
 }
