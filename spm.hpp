@@ -21,7 +21,7 @@ typedef unsigned long long ull;
 //enum CodeType : ull{NEWLINE, CONSTANT, RANGE};
 //TODO: change to 8 bytes
 struct SpmCode{
-    ull encode_length : LOG2_SPM_CODE_ENCODE_BITS;
+    ull encode_length : NBITS_SPM_CODE_ENCODE_BITS;
     enum CodeType {
         NEWLINE, CONSTANT, RANGE
     }ct : 2;
@@ -225,9 +225,9 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
                 break;
             case 2:
                 if(tree[curr].left == -1 && tree[curr].right == -1){
-                    if(path.size() > 7){
+                    if(path.size() > SPM_CODE_ENCODE_BITS){
                         cerr << "code too long" << endl;
-                        exit(1);
+                        //exit(1);
                     }
                     SpmCode tmp = tree[curr].code;
                     tmp.encode = BitsToInt(path);
@@ -341,7 +341,7 @@ bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argu
 }
 
 
-int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull length, ull argumentLength, int subHeight = 256, int subWidth = 16);
+int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull length, ull argumentLength, int subHeight = SUB_HEIGHT, int subWidth = SUB_WIDTH);
 
 int spmDecompress(SpmOptions options){
     cerr << "decompressing" << endl;
@@ -420,7 +420,7 @@ int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes,
 
 }
 
-int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = SUB_HEIGHT, int subCol = SUB_WIDTH, int huffmanCodesSize = CONSTANT_DELTAS, int maxHuffmanLength = 7);
+int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow = SUB_HEIGHT, int subCol = SUB_WIDTH, int huffmanCodesSize = CONSTANT_DELTAS, int maxHuffmanLength = SPM_CODE_ENCODE_BITS);
 
 int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull &length, ull &argumentLength, int subRow, int subCol, int huffmanCodesSize, int maxHuffmanLength){
     spmCodes.clear();
@@ -511,15 +511,25 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
             distribution[SpmCode(SpmCode::RANGE,(ll)log2(deltas[i]))]++;
     }
     vector<SpmCode> codes;
-    maxHuffmanLength = 6;
-    if(maxHuffmanLength != -1)
-        codes = createCodes(distribution, nnz, maxHuffmanLength);
-    else{}
+    //maxHuffmanLength = 6;
+    if(maxHuffmanLength != -1){
+        int codeLengthTarget = maxHuffmanLength;
+        for(;;){
+            codes = createCodes(distribution, nnz, codeLengthTarget);
+            if(FindMaxCodeLength(codes) > maxHuffmanLength)
+                codeLengthTarget--;
+            else
+                break;
+        }
+    }else{
+        //TODO: unbounded case
+    }
         //codes = createCodes(distribution);
     int maxCodeLength = FindMaxCodeLength(codes);
     cerr << "max encode length: " << maxCodeLength << endl;
-    if(maxCodeLength > 7) {
-        cerr << "code length greater than 7" << endl;
+    if(maxCodeLength > maxHuffmanLength || maxCodeLength == 0) {
+        cerr << "code length greater than max" << endl;
+        cerr << "maxCodeLength: " << maxCodeLength << endl;
         exit(1);
     }
     map<SpmCode, SpmCode> codeMap;
@@ -595,9 +605,9 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
     //spmCodes = codes;
-    spmCodes.resize(1 << 7);
+    spmCodes.resize(1 << maxHuffmanLength);
     for(int i = 0; i < codes.size(); ++i){
-        for(int j = codes[i].encode; j < 1 << 7; j += 1 << codes[i].encode_length){
+        for(int j = codes[i].encode; j < 1 << maxHuffmanLength; j += 1 << codes[i].encode_length){
             spmCodes[j] = codes[i];
         }
     }
