@@ -66,14 +66,12 @@ struct SpmOptions{
         maxHuffmanLength=-1;
         inputFilename="";
         outputFilename="";
-        cerr << "hello world" << endl;
         if(argc == 1)
             return;
         int currentArg = 1;
         int fileNamesRead = 0;
         while(currentArg < argc){
             string arg(argv[currentArg]);
-            cerr << "processing arg: " << arg << endl;
             if(arg.substr(0,2) == "--"){
                 if(arg.find("subheight") != string::npos)
                     this->subHeight = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
@@ -83,13 +81,9 @@ struct SpmOptions{
                     this->huffmanEncodedDeltas = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
                 else if(arg.find("maxhuffmanlength") != string::npos)
                     this->maxHuffmanLength = atoi(arg.substr(arg.find("=")+1,arg.size()).c_str());
-                cerr << "woot woot:" << this->subHeight << endl;
 
             }
             else if(arg[0] == '-'){
-                cerr << "found -" << endl;
-                //TODO: figure out find
-                cerr << "location: " << arg.find("c") << endl;
                 if(arg.find("c") != string::npos)
                     this->compress = true;
                 if(arg.find("x") != string::npos)
@@ -108,13 +102,6 @@ struct SpmOptions{
             }
             currentArg++;
         }
-        //TODO: print check
-        cerr << "compress: " << this->compress << endl;
-        cerr << "subHeight: " << this->subHeight << endl;
-        cerr << "subWidth: " << this->subWidth << endl;
-        cerr << "HuffmanCount: " << this->huffmanEncodedDeltas << endl;
-        cerr << "inputFilename: " << this->inputFilename << endl;
-        cerr << "outputFilename: " << this->outputFilename << endl;
     }
     bool compress;
     int subHeight;
@@ -190,10 +177,6 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
         tmp.frequency = tree[i].frequency + tree[i+1].frequency;
         tree.push_back(tmp);
     }
-//    cerr << "test\n";
-//    for(int i = 0; i < tree.size(); ++i){
-//        cerr << tree[i].frequency << endl;
-//    }
 
     //create codes
     vector<bool> path;
@@ -202,8 +185,6 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
     int curr = tree.size() - 1;
     phase.push_back(0);
     while(phase[0] != 2 || phase.size() != 1){
-//        cerr << "dfs: " << curr << endl;
-//        cerr << "children: " << tree[curr].left << " and " << tree[curr].right << endl;
         switch(phase.back()){
             case 0:
                 phase[phase.size()-1] = 1;
@@ -243,14 +224,6 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
                 break;
         }
     }
-    cerr << "codes: " << codes.size() << endl;
-    for(int i = 0; i < codes.size(); ++i){
-        cerr << "index: " << i << ":\n";
-        cerr << "encode: " << codes[i].encode << endl;
-        cerr << "encode length: " << codes[i].encode_length << endl;
-        cerr << "code type: " << codes[i].ct << endl;
-        cerr << "delta: " << codes[i].delta << endl;
-    }
     return codes;
 }
     //TODO: print rcr file
@@ -258,7 +231,6 @@ vector<SpmCode> createCodes(map<SpmCode, ll> &distribution, ll nnz, ll maxLength
 bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argumentStream, vector<SpmCode> &codes, ll length, ll argumentLength, FILE* output){
     ull tmp = codes.size();
     char* printerPtr = (char*)&tmp;
-    cerr << "output codes size: " << (*printerPtr) << endl;
     tmp = mainOptions.M;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i)
@@ -323,10 +295,8 @@ bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argu
     for(int i = 0; i < 8; ++i){
         fprintf(output, "%c", printerPtr[i]);
     }
-    cerr << "argumentLength printed: " << argumentLength << endl;
     for(int i = 0; i < argumentStream.size(); ++i){
         tmp = argumentStream[i];
-        cerr << "writing argument: " << hex << argumentStream[i] << endl;
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j){
             fprintf(output, "%c", printerPtr[j]);
@@ -344,12 +314,10 @@ bool writeToFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &argu
 int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &argumentStream, ull length, ull argumentLength, int subHeight = SUB_HEIGHT, int subWidth = SUB_WIDTH);
 
 int spmDecompress(SpmOptions options){
-    cerr << "decompressing" << endl;
     FILE* outputFile;
     if(options.outputFilename == ""){
         outputFile = stdout;
     }else{
-        cerr << "opening file" << endl;
         outputFile = fopen(options.outputFilename.c_str(), "w");
     }
     vector<ull> encodedStream;
@@ -358,18 +326,6 @@ int spmDecompress(SpmOptions options){
     ll length;
     ll argumentLength;
     readFromFile(options, encodedStream, encodedArgumentStream, codes, length, argumentLength, options.inputFilename);
-    /*
-    cerr <<  hex << "first arg: " << encodedArgumentStream[0] << endl;
-    cerr << dec;
-    cerr << "codes: " << endl;
-    for(int i = 0; i < codes.size(); ++i){
-        cerr << i << ": " << endl;
-        cerr << "encode_length: " << codes[i].encode_length << endl;
-        cerr << "code type: " << codes[i].ct << endl;
-        cerr << "delta: " << codes[i].delta << endl;
-        cerr << "encode: " << codes[i].encode << endl;
-    }
-    */
 
     vector<ull> row;
     vector<ull> col;
@@ -377,17 +333,12 @@ int spmDecompress(SpmOptions options){
 
     fprintf(outputFile, "\%\%MatrixMarket matrix coordinate pattern general\n");
     fprintf(outputFile, "%lld %lld %lld\n", options.M, options.N, options.nnz);
-    cerr << "row size: " << row.size() << endl;
     for(ull i = 0; i < options.nnz; ++i)
         fprintf(outputFile, "%lld %lld\n", row[i] + 1, col[i] + 1);
     return 0;
 }
 int spmDecompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, vector<ull> &encodedStream, vector<ull> &encodedArgumentStream, ull length, ull argumentLength, int subHeight, int subWidth){
-    cerr << "length: " << length << endl;
-    cerr << "argumentlength: " << argumentLength << endl;
     vector<ll> decodedDeltas = decode(encodedStream, encodedArgumentStream, spmCodes, length, argumentLength);
-    cerr << "deltas size: " << decodedDeltas.size() << endl;
-    //TODO:turn deltas into indices
     ll x = -1;
     ll y  = 0;
     ll newLines = 0;
@@ -426,52 +377,20 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     spmCodes.clear();
     encodedStream.clear();
     argumentStream.clear();
-    //rcr 42
     int nnz = row.size();
-    cerr << "creating matrix map \n";
     map<ll, map<ll, map<ll, map<ll, pair<int,int> > > > > matrix;
     for(ll i = 0; i < nnz; ++i){
         matrix[row[i]/subRow][col[i]/subCol][row[i]%subRow][col[i]%subCol] = make_pair(row[i], col[i]);
-        /*
-        int j = 0;
-        for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
-            //cerr << i1->first << endl;
-            if(i1->first != j){
-                cerr << "something is wrong" << endl;
-                cerr << "curr: " << row[j] << "prev: " << row[j-1] << endl;
-                exit(1);
-            }
-            j++;
-        }
-        */
     }
-    //vector<ll> deltas2;
     vector<ll> deltas;
-    //deltas2.resize(2*nnz);
-    //ll delta2Index = 0;
     ll delta = 0;
     ll p1 = 0; ll p2 = 0; ll p3 = 0; ll p4 = 0;
-    cerr << "done part 1\n";
     int i = 0;
-    /*
-    cerr << "debugging matrix:" << endl;
-    for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
-        cerr << i1->first << endl;
-        if(i1->first != i){
-            cerr << "something is wrong" << endl;
-            exit(1);
-        }
-        i++;
-    }
-    */
     i = 0;
     for(auto i1 = matrix.begin(); i1 != matrix.end(); ++i1){
         i++;
-        //delta += (i1->first - p1)*4*N; //new line
         for(int i = 0; i < i1->first - p1; ++i){
             deltas.push_back(-1);
-            //deltas2[delta2Index] = -1;
-            //delta2Index++;
         }
         for(auto i2 = i1->second.begin(); i2 != i1->second.end(); ++i2){
             delta += (i2->first - p2)*subRow*subCol;
@@ -491,17 +410,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         delta = 0;
         p2=0; p3=0; p4=0;
     }
-    //deltas2.resize(delta2Index);
-    //deltas = deltas2;
-    /*
-    cerr << "deltas: " << deltas.size() << endl;
-    for(int i = 0; i < deltas.size(); ++i){
-        cerr << i << ": " << deltas[i] << endl;
-    }
-    */
     map<SpmCode, ll> distribution;
-    //int huffmanCodesSize = mainOptions.huffmanEncodedDeltas + 2;
-    cerr << "creating huffman codes\n";
     for(int i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
             distribution[SpmCode(SpmCode::NEWLINE, 0)]++;
@@ -526,14 +435,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     }
         //codes = createCodes(distribution);
     int maxCodeLength = FindMaxCodeLength(codes);
-    cerr << "max encode length: " << maxCodeLength << endl;
     if(maxCodeLength > maxHuffmanLength || maxCodeLength == 0) {
         cerr << "code length greater than max" << endl;
         cerr << "maxCodeLength: " << maxCodeLength << endl;
         exit(1);
     }
     map<SpmCode, SpmCode> codeMap;
-    cerr << "creating codeMap\n";
     for(int i = 0; i < codes.size(); ++i){
         codeMap[codes[i]] = codes[i];
     }
@@ -541,7 +448,6 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
     ll encodedLatest = 0;
     ll argumentCurrBit = 0;
     ll argumentLatest = 0;
-    cerr << "encoding deltas\n";
     for(ll i = 0; i < deltas.size(); ++i){
         ll delta = deltas[i];
         SpmCode deltaCode;
@@ -581,12 +487,6 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 argumentCurrBit += width;
             }
         }
-        /*
-        cerr << "encodedCurrBit: " << encodedCurrBit << endl;
-        cerr << "argumentCurrBit: " << argumentCurrBit << endl;
-        cerr << "argument: " << hex << argumentLatest << endl;
-        cerr << dec;
-        */
     }
     length = encodedCurrBit;
     length += 64*encodedStream.size();
@@ -599,8 +499,6 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         argumentStream.push_back(argumentLatest);
     encodedStream.push_back(0);
     argumentStream.push_back(0);
-    cerr << "Size (bytes): " << (encodedStream.size()*8) << endl;
-    cerr << "Bits per index: " << (encodedStream.size()*64.0/deltas.size()) << endl;
     double averageBits = (encodedStream.size()*64.0/deltas.size());
     ofstream log("log", ofstream::app);
     log << averageBits << endl;
@@ -612,15 +510,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         }
     }
 
-    cerr << "length: " << length << endl;
-    cerr << "argumentLength: " << argumentLength << endl;
 }
 
 int spmCompress(SpmOptions mainOptions){
     if(mainOptions.inputFilename != "")
         freopen(mainOptions.inputFilename.c_str(), "r", stdin);
     scanf("%[^\n]", buffer);
-    cerr << buffer << endl;
     string matrixCode;
     bool pattern = true;
     if(string(buffer).find("real") != string::npos)
@@ -636,9 +531,6 @@ int spmCompress(SpmOptions mainOptions){
     vector<ull> row;
     vector<ull> col;
     vector<double> values;
-    cerr << nnz << "\n";
-    cerr << M << "\n";
-    cerr << N << "\n";
     for(ll i = 0; i < nnz; ++i){
         ll tmp1, tmp2;
         if(!pattern){
@@ -655,7 +547,6 @@ int spmCompress(SpmOptions mainOptions){
     vector<SpmCode> codes;
     ull length, argumentLength;
     bool ret = spmCompress(row, col, codes, encodedStream, argumentStream, length, argumentLength);
-    cerr << "codes.size(): " << codes.size() << endl;
     FILE* tmp;
 
     //freopen(tmp, "w", stdout);
@@ -727,33 +618,26 @@ bool readFromFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &arg
     char* printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
-        cerr << ((int)*printerPtr) << endl;
         printerPtr++;
     }
     mainOptions.M = tmp;
-    cerr << "M: " << tmp << endl;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
-        cerr << ((int)*printerPtr) << endl;
         printerPtr++;
     }
     mainOptions.N = tmp;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
-        cerr << ((int)*printerPtr) << endl;
         printerPtr++;
     }
     mainOptions.nnz = tmp;
-    cerr << "nnz: " << tmp << endl;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
-        cerr << ((int)*printerPtr) << endl;
         printerPtr++;
     }
-    cerr << "read codes size: " << tmp << endl;
     ll codeCount = tmp;
     for(int i = 0; i < codeCount; ++i){
         SpmCode tmpCode;
@@ -775,14 +659,12 @@ bool readFromFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &arg
         tmpCode.delta = tmp;
         codes.push_back(tmpCode);
     }
-    cerr << "here" << endl;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
         printerPtr++;
     }
     length = tmp;
-    cerr << "here" << endl;
     for(int i = 0; i < ((length - 1)/64 + 2); ++i){
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j){
@@ -792,33 +674,27 @@ bool readFromFile(SpmOptions &mainOptions, vector<ull> &stream, vector<ull> &arg
         stream.push_back(tmp);
     }
 
-    cerr << "here" << endl;
     printerPtr = (char*)&tmp;
     for(int i = 0; i < 8; ++i){
         fscanf(input, "%c", printerPtr);
         printerPtr++;
     }
     argumentLength = tmp;
-    cerr << "here: " << argumentLength << endl;
     for(int i = 0; i < ((argumentLength - 1)/64 + 2); ++i){
         printerPtr = (char*)&tmp;
         for(int j = 0; j < 8; ++j){
             fscanf(input, "%c", printerPtr);
             printerPtr++;
         }
-        cerr << hex << "argument read: " << tmp << endl;
-        cerr << dec;
         argumentStream.push_back(tmp);
     }
 
     fclose(input);
-    cerr << "end of reading file" << endl;
     return true;
 }
 //TODO check equality
 bool checkEquality(vector<ull> &streamOld, vector<ull> &streamNew, vector<SpmCode> &codesOld, vector<SpmCode> &codesNew){
     if(streamOld.size() != streamNew.size()){
-        cerr << "stream size mismatch\n";
         return false;
     }
     for(int i = 0; i < streamOld.size(); ++i){
@@ -849,54 +725,28 @@ vector<ll> decode(vector<ull> stream, vector<ull> argumentStream, vector<SpmCode
     }
     //TODO: print codes
     int i = 0;
-    /*
-    cerr << "codes:" << endl;
-    for(auto it = codesMap.begin(); it != codesMap.end(); ++it){
-        cerr << dec << "code index: " << i++ << endl;
-        cerr << hex << "encode: " << it->first << endl;
-        cerr << dec << "encode length: " << it->second.encode_length << endl;
-        cerr << "code type: " << it->second.ct << endl;
-        cerr << dec << "delta: " << it->second.delta << endl;
-    }
-    */
     i = 0;
     while(currBit < length) {
         ull latest = stream[currBit/64] >> (currBit % 64);
         if(currBit/64 + 1 < stream.size() && (currBit % 64) != 0)
             latest |= stream[currBit/64+1] << (64 - currBit % 64);
 
-        /*
-        cerr << "decode: \n";
-        cerr << hex << latest << endl;
-        if(codesMap.lower_bound(latest) == codesMap.end())
-            cerr << "wtf" << endl;
-            */
-//        cerr << hex << codesMap.lower_bound(latest)->first << endl;
-        //cerr << hex << ((codesMap.lower_bound(latest))-1)->first << endl;
         auto it = codesMap.upper_bound(latest);
         if(it == codesMap.begin())
             cerr << "ERROR: bad iterator value" << endl;
         --it;
         SpmCode tmp = it->second;
-        /*
-        cerr << "delta: " << it->second.delta << endl;
-        cerr << "i: " << i << endl;
-        cerr << "currBit: " << currBit << "/" << length << endl;
-        */
         i++;
-        //oldCurrBut = currBit;
         if(tmp.encode_length == 0){
             cerr << "ERROR encode lengt equals 0" << endl;
             exit(1);
         }
         currBit += tmp.encode_length;
 
-        //TODO: decode gamma code
         if(tmp.ct == SpmCode::NEWLINE){
             decoded.push_back(-1);
         }else if(tmp.ct == SpmCode::RANGE){
             latest = argumentStream[argumentCurrBit/64] >> (argumentCurrBit % 64);
-            //cerr << "latest argument stream" << hex << latest << endl;
             if(argumentCurrBit/64 + 1 < argumentStream.size() && (argumentCurrBit % 64) != 0)
                 latest |= argumentStream[argumentCurrBit/64+1] << (64 - argumentCurrBit % 64);
             int width = tmp.delta;
