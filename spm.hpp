@@ -398,6 +398,10 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 delta += (i3->first - p3)*subCol;
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
+                    if(delta >= 1LL << 31){
+                        cerr << "overflowing delta: " << delta << endl;
+                        exit(2);
+                    }
                     deltas.push_back(delta);
                     delta = -1;
                     p4 = i4->first;
