@@ -25,7 +25,7 @@ struct SpmCode{
     enum CodeType {
         NEWLINE, CONSTANT, RANGE
     }ct : 2;
-    ull delta : 5;
+    ull delta : 6;
     ull encode : SPM_CODE_ENCODE_BITS;
     SpmCode(){}
     SpmCode(CodeType ct, ull delta){
@@ -398,10 +398,12 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
                 delta += (i3->first - p3)*subCol;
                 for(auto i4 = i3->second.begin(); i4 != i3->second.end(); ++i4){
                     delta += i4->first - p4;
+                    /*
                     if(delta >= 1LL << 31){
                         cerr << "overflowing delta: " << delta << endl;
                         exit(2);
                     }
+                    */
                     deltas.push_back(delta);
                     delta = -1;
                     p4 = i4->first;
@@ -415,7 +417,7 @@ int spmCompress(vector<ull> &row, vector<ull> &col, vector<SpmCode> &spmCodes, v
         p2=0; p3=0; p4=0;
     }
     map<SpmCode, ll> distribution;
-    for(int i = 0; i < deltas.size(); ++i){
+    for(ll i = 0; i < deltas.size(); ++i){
         if(deltas[i] == -1)
             distribution[SpmCode(SpmCode::NEWLINE, 0)]++;
         else if(deltas[i] < huffmanCodesSize)
